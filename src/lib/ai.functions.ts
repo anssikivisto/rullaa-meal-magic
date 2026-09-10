@@ -10,6 +10,7 @@ type ParsedRecipe = {
   prep_time: number | null;
   ingredients: { quantity: number | null; unit: string | null; name: string }[];
   instructions: string[];
+  image_url?: string | null;
 };
 
 const recipeSchema = {
