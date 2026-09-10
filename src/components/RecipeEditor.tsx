@@ -12,6 +12,7 @@ import { toast } from "sonner";
 export type DraftRecipe = {
   id?: string;
   title: string;
+  image_url?: string | null;
   source_url: string | null;
   prep_time: number | null;
   servings: number;
@@ -23,6 +24,7 @@ export type DraftRecipe = {
 export function emptyDraft(): DraftRecipe {
   return {
     title: "",
+    image_url: null,
     source_url: null,
     prep_time: null,
     servings: 4,
@@ -36,6 +38,7 @@ export function recipeToDraft(r: Recipe): DraftRecipe {
   return {
     id: r.id,
     title: r.title,
+    image_url: r.image_url,
     source_url: r.source_url,
     prep_time: r.prep_time,
     servings: r.servings,
@@ -60,6 +63,7 @@ export function RecipeEditor({
 }) {
   const [tagInput, setTagInput] = useState("");
   const [suggesting, setSuggesting] = useState(false);
+  const [suggested, setSuggested] = useState<string[]>([]);
 
   const set = (patch: Partial<DraftRecipe>) => onChange({ ...draft, ...patch });
 
@@ -82,9 +86,11 @@ export function RecipeEditor({
           prep_time: draft.prep_time,
         },
       });
-      const merged = [...new Set([...draft.tags, ...tags])];
-      set({ tags: merged });
-      toast.success("Tagiehdotukset lisätty.");
+      const fresh = tags.filter((t) => !draft.tags.includes(t));
+      setSuggested(fresh);
+      toast.success(
+        fresh.length ? "Napauta ehdotuksia lisätäksesi ne." : "Ei uusia ehdotuksia.",
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Tagien ehdottaminen epäonnistui.");
     } finally {
@@ -109,6 +115,25 @@ export function RecipeEditor({
           onChange={(e) => set({ title: e.target.value })}
           placeholder="Esim. Uunilohi ja perunat"
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="image">Kuvan osoite (valinnainen)</Label>
+        <Input
+          id="image"
+          value={draft.image_url ?? ""}
+          onChange={(e) => set({ image_url: e.target.value || null })}
+          placeholder="https://..."
+          inputMode="url"
+        />
+        {draft.image_url ? (
+          <img
+            src={draft.image_url}
+            alt={draft.title || "Reseptin kuva"}
+            className="h-32 w-full rounded-xl object-cover"
+            loading="lazy"
+          />
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -249,6 +274,26 @@ export function RecipeEditor({
             </span>
           ))}
         </div>
+        {suggested.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground">Ehdotukset – napauta lisätäksesi</p>
+            <div className="flex flex-wrap gap-1.5">
+              {suggested.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    set({ tags: [...new Set([...draft.tags, t])] });
+                    setSuggested((prev) => prev.filter((x) => x !== t));
+                  }}
+                  className="rounded-full border border-dashed border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+                >
+                  #{t}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex gap-2">
           <Input
             value={tagInput}
