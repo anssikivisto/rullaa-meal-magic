@@ -348,3 +348,159 @@ Käytä vain annettuja recipe_id -arvoja. Palauta JSON {"plan":[{"day":0,"recipe
     const valid = new Set(data.recipes.map((r) => r.id));
     return (result.plan ?? []).filter((p) => valid.has(p.recipe_id) && p.day >= 0 && p.day <= 6);
   });
+
+/* -------- translate + metric conversion -------- */
+
+const recipeInputSchema = z.object({
+  title: z.string(),
+  servings: z.number().nullable(),
+  prep_time: z.number().nullable(),
+  ingredients: z.array(
+    z.object({
+      quantity: z.number().nullable(),
+      unit: z.string().nullable(),
+      name: z.string(),
+    }),
+  ),
+  instructions: z.array(z.string()),
+});
+
+export const translateRecipe = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ recipe: recipeInputSchema }).parse(input))
+  .handler(async ({ data }): Promise<ParsedRecipe> => {
+    const parsed = (await callGateway({
+      messages: [
+        {
+          role: "system",
+          content: `Käännä resepti suomeksi ja muunna kaikki mitat metrijärjestelmään.
+Muunnokset: 1 cup = 2,4 dl (kuivat aineet muunna grammoiksi kun järkevää), 1 oz = 28 g, 1 lb = 454 g,
+1 tbsp = 1 rkl, 1 tsp = 1 tl, fahrenheit -> celsius ((F-32)/1,8, pyöristä lähimpään 5 asteeseen).
+Käännä otsikko, raaka-aineet ja vaiheet luontevalle suomelle. Pyöristä määrät järkeviksi.
+Palauta sama JSON-rakenne.`,
+        },
+        { role: "user", content: JSON.stringify(data.recipe) },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "recipe", strict: true, schema: recipeSchema },
+      },
+    })) as ParsedRecipe;
+    return parsed;
+  });
+
+/* -------- AI chat recipe editor -------- */
+
+export const chatEditRecipe = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        recipe: recipeInputSchema,
+        messages: z
+          .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) }))
+          .max(30),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ reply: string; recipe: ParsedRecipe }> => {
+    const result = (await callGateway({
+      messages: [
+        {
+          role: "system",
+          content: `Olet suomenkielinen kokkiapuri. Muokkaat annettua reseptiä käyttäjän pyyntöjen mukaan
+(esim. vegaaniseksi, korvaa raaka-aine, skaalaa annosmäärä, kevennä).
+Palauta JSON: reply (lyhyt suomenkielinen selitys mitä muutit, max 2 lausetta) ja
+recipe (koko päivitetty resepti samassa rakenteessa, suomeksi ja metrimitoin).
+Jos käyttäjä vain kysyy jotain, vastaa reply-kentässä ja palauta resepti muuttumattomana.
+Anna muunnelmalle kuvaava otsikko jos ruokalaji muuttuu olennaisesti.`,
+        },
+        { role: "user", content: `Nykyinen resepti:\n${JSON.stringify(data.recipe)}` },
+        ...data.messages,
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "chat_edit",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: { reply: { type: "string" }, recipe: recipeSchema },
+            required: ["reply", "recipe"],
+          },
+        },
+      },
+    })) as { reply: string; recipe: ParsedRecipe };
+    return result;
+  });
+
+/* -------- AI recipe generator -------- */
+
+export const generateRecipe = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({ prompt: z.string().min(3).max(600) }).parse(input),
+  )
+  .handler(async ({ data }): Promise<ParsedRecipe> => {
+    const parsed = (await callGateway({
+      messages: [
+        {
+          role: "system",
+          content: `Luot uuden suomenkielisen reseptin käyttäjän toiveen perusteella.
+Käytä metrimittoja (g, dl, rkl, tl, kpl). Anna selkeä otsikko, annosmäärä, valmistusaika minuutteina,
+raaka-aineet ja vaiheet. Pidä resepti realistisena ja suomalaisesta kaupasta saatavilla aineksilla.`,
+        },
+        { role: "user", content: data.prompt },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "recipe", strict: true, schema: recipeSchema },
+      },
+    })) as ParsedRecipe;
+    return parsed;
+  });
+
+/* -------- web recipe search -------- */
+
+export type WebResult = { title: string; url: string; snippet: string };
+
+function decodeEntities(s: string) {
+  return s
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;|&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+}
+
+export const searchWebRecipes = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ query: z.string().min(2).max(200) }).parse(input))
+  .handler(async ({ data }): Promise<WebResult[]> => {
+    const res = await fetch("https://html.duckduckgo.com/html/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "Mozilla/5.0 (compatible; RullaaBot/1.0)",
+      },
+      body: new URLSearchParams({ q: `${data.query} resepti` }).toString(),
+    });
+    if (!res.ok) throw new Error("Haku ei juuri nyt onnistu. Yritä hetken kuluttua.");
+    const html = await res.text();
+    const results: WebResult[] = [];
+    const re =
+      /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>)?/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) && results.length < 12) {
+      let url = m[1] ?? "";
+      const uddg = url.match(/uddg=([^&]+)/);
+      if (uddg) url = decodeURIComponent(uddg[1]!);
+      if (!/^https?:\/\//.test(url)) continue;
+      results.push({
+        title: decodeEntities(m[2] ?? ""),
+        url,
+        snippet: decodeEntities(m[3] ?? "").slice(0, 200),
+      });
+    }
+    return results;
+  });
