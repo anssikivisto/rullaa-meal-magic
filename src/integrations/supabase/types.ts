@@ -53,6 +53,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          image_url: string | null
           ingredients: Json
           instructions: string[]
           prep_time: number | null
@@ -65,6 +66,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          image_url?: string | null
           ingredients?: Json
           instructions?: string[]
           prep_time?: number | null
@@ -77,6 +79,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          image_url?: string | null
           ingredients?: Json
           instructions?: string[]
           prep_time?: number | null

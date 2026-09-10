@@ -17,6 +17,7 @@ function toRecipe(row: Record<string, unknown>): Recipe {
     ingredients: (row['ingredients'] as Ingredient[]) ?? [],
     instructions: (row['instructions'] as string[]) ?? [],
     tags: (row['tags'] as string[]) ?? [],
+    image_url: (row['image_url'] as string) ?? null,
     created_at: row['created_at'] as string,
   };
 }
@@ -33,7 +34,10 @@ async function fetchRecipes({ userId }: Ctx): Promise<Recipe[]> {
   return (data ?? []).map(toRecipe);
 }
 
-export type RecipeInput = Omit<Recipe, "id" | "created_at"> & { id?: string };
+export type RecipeInput = Omit<Recipe, "id" | "created_at" | "image_url"> & {
+  id?: string;
+  image_url?: string | null;
+};
 
 async function saveRecipe(ctx: Ctx, input: RecipeInput): Promise<Recipe> {
   if (!ctx.userId) {
@@ -56,6 +60,7 @@ async function saveRecipe(ctx: Ctx, input: RecipeInput): Promise<Recipe> {
     ingredients: input.ingredients as unknown as never,
     instructions: input.instructions,
     tags: input.tags,
+    image_url: input.image_url ?? null,
   };
   if (input.id) {
     const { data, error } = await supabase
@@ -341,6 +346,7 @@ export async function migrateGuestData(userId: string) {
         ingredients: r.ingredients as unknown as never,
         instructions: r.instructions,
         tags: r.tags,
+        image_url: r.image_url ?? null,
       })
       .select("id")
       .single();
