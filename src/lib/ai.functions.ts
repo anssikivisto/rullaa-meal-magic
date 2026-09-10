@@ -168,6 +168,27 @@ function stripHtml(html: string) {
     .trim();
 }
 
+function imageFromNode(node: Record<string, unknown>): string | null {
+  const img = node["image"];
+  const pick = (v: unknown): string | null => {
+    if (typeof v === "string") return v;
+    if (Array.isArray(v)) return pick(v[0]);
+    if (v && typeof v === "object") {
+      const o = v as Record<string, unknown>;
+      if (typeof o["url"] === "string") return o["url"];
+    }
+    return null;
+  };
+  return pick(img);
+}
+
+function ogImage(html: string): string | null {
+  const m =
+    html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ??
+    html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+  return m?.[1] ?? null;
+}
+
 export const parseRecipeUrl = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ url: z.string().url() }).parse(input))
   .handler(async ({ data }): Promise<ParsedRecipe & { source_url: string }> => {
@@ -204,6 +225,7 @@ export const parseRecipeUrl = createServerFn({ method: "POST" })
             prep_time: parseIsoDuration(node["totalTime"]) ?? parseIsoDuration(node["cookTime"]),
             ingredients,
             instructions,
+            image_url: imageFromNode(node) ?? ogImage(html),
             source_url: data.url,
           };
         }
@@ -224,7 +246,7 @@ export const parseRecipeUrl = createServerFn({ method: "POST" })
         json_schema: { name: "recipe", strict: true, schema: recipeSchema },
       },
     })) as ParsedRecipe;
-    return { ...parsed, source_url: data.url };
+    return { ...parsed, image_url: ogImage(html), source_url: data.url };
   });
 
 /* -------- tag suggestions -------- */
