@@ -1,0 +1,54 @@
+import { Link, useRouterState } from "@tanstack/react-router";
+import { BookOpen, CalendarDays, ShoppingBasket, User } from "lucide-react";
+import type { ReactNode } from "react";
+import { RullaaLogo } from "./RullaaLogo";
+import { cn } from "@/lib/utils";
+
+const TABS = [
+  { to: "/", label: "Reseptit", icon: BookOpen },
+  { to: "/ruokalista", label: "Ruokalista", icon: CalendarDays },
+  { to: "/ostoslista", label: "Ostoslista", icon: ShoppingBasket },
+  { to: "/tili", label: "Tili", icon: User },
+] as const;
+
+export function AppShell({ children, action }: { children: ReactNode; action?: ReactNode }) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  return (
+    <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col bg-background">
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur-md">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Link to="/" className="flex items-center gap-2">
+            <RullaaLogo className="h-8 w-8" />
+            <span className="font-display text-2xl font-semibold tracking-tight">Rullaa</span>
+          </Link>
+          {action}
+        </div>
+      </header>
+
+      <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
+
+      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-2xl border-t border-border/70 bg-background/95 backdrop-blur-md">
+        <ul className="grid grid-cols-4">
+          {TABS.map(({ to, label, icon: Icon }) => {
+            const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+            return (
+              <li key={to}>
+                <Link
+                  to={to}
+                  className={cn(
+                    "flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
+                    active ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  <Icon className={cn("h-5 w-5", active && "stroke-[2.4]")} />
+                  {label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </div>
+  );
+}
