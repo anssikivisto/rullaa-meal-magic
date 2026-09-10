@@ -1,24 +1,137 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { Clock, Plus, Search, UtensilsCrossed } from "lucide-react";
+import { AppShell } from "@/components/AppShell";
+import { ImportDialog } from "@/components/ImportDialog";
+import { TagChip } from "@/components/TagChip";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useRecipes } from "@/lib/store";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Rullaa – reseptit, ruokalista ja ostoslista" },
+      {
+        name: "description",
+        content:
+          "Rullaa kokoaa reseptisi, suunnittelee viikon ruokalistan ja tekee ostoslistan automaattisesti.",
+      },
+      { property: "og:title", content: "Rullaa – arjen ruokasuunnittelu" },
+      {
+        property: "og:description",
+        content: "Tallenna reseptit, suunnittele viikko ja saa valmis ostoslista.",
+      },
+    ],
+  }),
+  component: Reseptit,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Reseptit() {
+  const { data: recipes = [], isLoading } = useRecipes();
+  const [query, setQuery] = useState("");
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
+
+  const allTags = useMemo(
+    () => [...new Set(recipes.flatMap((r) => r.tags))].sort(),
+    [recipes],
+  );
+
+  const filtered = recipes.filter((r) => {
+    const q = query.trim().toLowerCase();
+    const matchesQuery =
+      !q ||
+      r.title.toLowerCase().includes(q) ||
+      r.ingredients.some((i) => i.name.toLowerCase().includes(q));
+    const matchesTags = activeTags.every((t) => r.tags.includes(t));
+    return matchesQuery && matchesTags;
+  });
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
+    <AppShell
+      action={
+        <Button size="sm" onClick={() => setImportOpen(true)}>
+          <Plus className="mr-1 h-4 w-4" /> Lisää
+        </Button>
+      }
     >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+      <h1 className="sr-only">Reseptit</h1>
+
+      <div className="relative mb-3">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Hae reseptiä tai raaka-ainetta"
+          className="pl-9"
+        />
+      </div>
+
+      {allTags.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {allTags.map((t) => (
+            <TagChip
+              key={t}
+              tag={t}
+              active={activeTags.includes(t)}
+              onClick={() =>
+                setActiveTags((prev) =>
+                  prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t],
+                )
+              }
+            />
+          ))}
+        </div>
+      )}
+
+      {isLoading ? (
+        <p className="py-12 text-center text-sm text-muted-foreground">Ladataan…</p>
+      ) : filtered.length === 0 ? (
+        <div className="card-soft mt-8 flex flex-col items-center gap-3 px-6 py-12 text-center">
+          <UtensilsCrossed className="h-8 w-8 text-muted-foreground" />
+          <p className="font-display text-xl">Ei vielä reseptejä</p>
+          <p className="max-w-xs text-sm text-muted-foreground">
+            Liitä linkki reseptisivulle tai Instagram-kuvaus – Rullaa poimii ainekset ja vaiheet
+            puolestasi.
+          </p>
+          <Button onClick={() => setImportOpen(true)}>Lisää ensimmäinen resepti</Button>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {filtered.map((r) => (
+            <li key={r.id}>
+              <Link
+                to="/resepti/$id"
+                params={{ id: r.id }}
+                className="card-soft block px-4 py-3 transition-transform active:scale-[0.99]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h2 className="font-display text-lg leading-snug">{r.title}</h2>
+                  {r.prep_time ? (
+                    <span className="mt-1 flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5" />
+                      {r.prep_time} min
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {r.servings} annosta · {r.ingredients.length} raaka-ainetta
+                </p>
+                {r.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {r.tags.map((t) => (
+                      <TagChip key={t} tag={t} />
+                    ))}
+                  </div>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
+    </AppShell>
   );
 }
