@@ -34,7 +34,10 @@ async function fetchRecipes({ userId }: Ctx): Promise<Recipe[]> {
   return (data ?? []).map(toRecipe);
 }
 
-export type RecipeInput = Omit<Recipe, "id" | "created_at"> & { id?: string };
+export type RecipeInput = Omit<Recipe, "id" | "created_at" | "image_url"> & {
+  id?: string;
+  image_url?: string | null;
+};
 
 async function saveRecipe(ctx: Ctx, input: RecipeInput): Promise<Recipe> {
   if (!ctx.userId) {

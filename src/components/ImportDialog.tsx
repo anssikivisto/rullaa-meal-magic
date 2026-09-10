@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Languages, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,9 +12,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RecipeEditor, emptyDraft, type DraftRecipe } from "./RecipeEditor";
-import { parseRecipeText, parseRecipeUrl } from "@/lib/ai.functions";
+import { parseRecipeText, parseRecipeUrl, translateRecipe } from "@/lib/ai.functions";
 import { useSaveRecipe } from "@/lib/store";
 import { toast } from "sonner";
+
+const IMPERIAL = /\b(cups?|cup|oz|ounces?|lbs?|pounds?|tbsp|tsp|fahrenheit|°f|quarts?|pints?)\b/i;
+const ENGLISH_WORDS = /\b(the|and|with|minutes|until|butter|chicken|sugar|flour|salt|heat)\b/i;
+
+export function needsTranslation(draft: DraftRecipe): boolean {
+  const text = [
+    draft.title,
+    ...draft.ingredients.map((i) => `${i.unit ?? ""} ${i.name}`),
+    ...draft.instructions,
+  ].join(" ");
+  return IMPERIAL.test(text) || ENGLISH_WORDS.test(text);
+}
 
 export function ImportDialog({
   open,
@@ -26,6 +38,7 @@ export function ImportDialog({
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [draft, setDraft] = useState<DraftRecipe | null>(null);
   const save = useSaveRecipe();
 
@@ -42,6 +55,7 @@ export function ImportDialog({
     prep_time: number | null;
     ingredients: { quantity: number | null; unit: string | null; name: string }[];
     instructions: string[];
+    image_url?: string | null;
     source_url?: string;
   }) {
     setDraft({
@@ -49,6 +63,7 @@ export function ImportDialog({
       title: p.title || "",
       servings: p.servings && p.servings > 0 ? p.servings : 4,
       prep_time: p.prep_time,
+      image_url: p.image_url ?? null,
       source_url: p.source_url ?? null,
       ingredients: p.ingredients.length ? p.ingredients : emptyDraft().ingredients,
       instructions: p.instructions.length ? p.instructions : [""],
@@ -84,6 +99,37 @@ export function ImportDialog({
     }
   }
 
+  async function handleTranslate() {
+    if (!draft) return;
+    setTranslating(true);
+    try {
+      const converted = await translateRecipe({
+        data: {
+          recipe: {
+            title: draft.title,
+            servings: draft.servings,
+            prep_time: draft.prep_time,
+            ingredients: draft.ingredients,
+            instructions: draft.instructions,
+          },
+        },
+      });
+      setDraft({
+        ...draft,
+        title: converted.title || draft.title,
+        servings: converted.servings && converted.servings > 0 ? converted.servings : draft.servings,
+        prep_time: converted.prep_time ?? draft.prep_time,
+        ingredients: converted.ingredients.length ? converted.ingredients : draft.ingredients,
+        instructions: converted.instructions.length ? converted.instructions : draft.instructions,
+      });
+      toast.success("Käännetty suomeksi ja muunnettu metrijärjestelmään.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Kääntäminen epäonnistui.");
+    } finally {
+      setTranslating(false);
+    }
+  }
+
   async function handleSave() {
     if (!draft?.title.trim()) {
       toast.error("Anna reseptille nimi.");
@@ -93,6 +139,7 @@ export function ImportDialog({
       await save.mutateAsync({
         title: draft.title.trim(),
         source_url: draft.source_url,
+        image_url: draft.image_url ?? null,
         prep_time: draft.prep_time,
         servings: draft.servings,
         ingredients: draft.ingredients.filter((i) => i.name.trim()),
@@ -122,13 +169,25 @@ export function ImportDialog({
         </DialogHeader>
 
         {draft ? (
-          <RecipeEditor
-            draft={draft}
-            onChange={setDraft}
-            onSave={handleSave}
-            onCancel={() => setDraft(null)}
-            saving={save.isPending}
-          />
+          <>
+            {needsTranslation(draft) && (
+              <Button variant="secondary" onClick={handleTranslate} disabled={translating}>
+                {translating ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Languages className="mr-2 h-4 w-4" />
+                )}
+                Käännä suomeksi &amp; muunna metrijärjestelmään
+              </Button>
+            )}
+            <RecipeEditor
+              draft={draft}
+              onChange={setDraft}
+              onSave={handleSave}
+              onCancel={() => setDraft(null)}
+              saving={save.isPending}
+            />
+          </>
         ) : (
           <Tabs defaultValue="url">
             <TabsList className="grid w-full grid-cols-3">
@@ -139,7 +198,8 @@ export function ImportDialog({
 
             <TabsContent value="url" className="space-y-3 pt-4">
               <p className="text-sm text-muted-foreground">
-                Lue verkko-osoitteesta: liitä linkki reseptisivulle.
+                Lue verkko-osoitteesta: liitä linkki reseptisivulle. Myös annoksen kuva haetaan
+                automaattisesti.
               </p>
               <Input
                 value={url}
@@ -155,7 +215,7 @@ export function ImportDialog({
 
             <TabsContent value="text" className="space-y-3 pt-4">
               <p className="text-sm text-muted-foreground">
-                Liitä kuvaus / Instagram-teksti: emojit ja hashtagit siivotaan automaattisesti.
+                Liitä Instagram- tai TikTok-kuvaus: emojit ja hashtagit siivotaan automaattisesti.
               </p>
               <Textarea
                 rows={9}
@@ -170,9 +230,7 @@ export function ImportDialog({
             </TabsContent>
 
             <TabsContent value="manual" className="space-y-3 pt-4">
-              <p className="text-sm text-muted-foreground">
-                Kirjoita resepti alusta asti itse.
-              </p>
+              <p className="text-sm text-muted-foreground">Kirjoita resepti alusta asti itse.</p>
               <Button onClick={() => setDraft(emptyDraft())} className="w-full">
                 Aloita tyhjästä
               </Button>
