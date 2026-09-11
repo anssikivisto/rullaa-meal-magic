@@ -117,24 +117,71 @@ function parseIsoDuration(iso: unknown): number | null {
   return total > 0 ? total : null;
 }
 
-function splitIngredient(line: string) {
-  const cleaned = line.replace(/\s+/g, " ").trim();
-  const m = cleaned.match(
-    /^([\d]+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?|½|¼|¾)\s*([a-zA-ZäöåÄÖÅ]{1,5}\.?)?\s+(.+)$/,
+const UNIT_MAP: Record<string, string> = {
+  g: "g", gram: "g", grams: "g", gramma: "g", grammaa: "g",
+  kg: "kg", kilo: "kg", kilos: "kg", kilogram: "kg", kilograms: "kg",
+  mg: "mg",
+  ml: "ml", milliliter: "ml", milliliters: "ml", millilitre: "ml",
+  cl: "cl", dl: "dl", desilitra: "dl", desilitraa: "dl",
+  l: "l", litre: "l", litres: "l", liter: "l", liters: "l", litra: "l", litraa: "l",
+  rkl: "rkl", tbsp: "rkl", tbs: "rkl", tablespoon: "rkl", tablespoons: "rkl", ruokalusikka: "rkl", ruokalusikallista: "rkl",
+  tl: "tl", tsp: "tl", teaspoon: "tl", teaspoons: "tl", teelusikka: "tl", teelusikallista: "tl",
+  oz: "oz", ounce: "oz", ounces: "oz",
+  lb: "lb", lbs: "lb", pound: "lb", pounds: "lb",
+  cup: "cup", cups: "cup",
+  pint: "pint", pints: "pint", quart: "quart", quarts: "quart",
+  kpl: "kpl", pcs: "kpl", piece: "kpl", pieces: "kpl", kappale: "kpl", kappaletta: "kpl",
+  pkt: "pkt", paketti: "pkt", pkg: "pkt", package: "pkt",
+  prk: "prk", purkki: "prk", tlk: "tlk", tölkki: "tlk", can: "prk", cans: "prk",
+  nippu: "nippu", bunch: "nippu", clove: "kynsi", cloves: "kynsi", kynsi: "kynsi",
+  pinch: "ripaus", ripaus: "ripaus", slice: "viipale", slices: "viipale",
+};
+
+const FRACTIONS: Record<string, number> = {
+  "½": 0.5, "¼": 0.25, "¾": 0.75, "⅓": 0.333, "⅔": 0.667, "⅛": 0.125,
+};
+
+export function splitIngredient(line: string) {
+  let cleaned = line.replace(/\s+/g, " ").trim();
+  // leading quantity: "1 1/2", "1½", "14", "2,5", "2-3"
+  const qm = cleaned.match(
+    /^((?:\d+(?:[.,]\d+)?)(?:\s*[-–/]\s*\d+(?:[.,]\d+)?)?\s*[½¼¾⅓⅔⅛]?|[½¼¾⅓⅔⅛])\s*/,
   );
-  if (!m) return { quantity: null, unit: null, name: cleaned };
-  const rawQ = (m[1] ?? "").replace("½", "0.5").replace("¼", "0.25").replace("¾", "0.75");
-  const q = Number(rawQ.split(/[-–]/)[0]!.replace(",", "."));
-  const units = ["g", "kg", "dl", "l", "ml", "rkl", "tl", "kpl", "pkt", "prk", "tlk", "nippu"];
-  const unitCandidate = (m[2] ?? "").replace(".", "").toLowerCase();
-  if (unitCandidate && units.includes(unitCandidate)) {
-    return { quantity: Number.isFinite(q) ? q : null, unit: unitCandidate, name: (m[3] ?? "").trim() };
+  let quantity: number | null = null;
+  if (qm) {
+    const raw = (qm[1] ?? "").trim();
+    let value = 0;
+    const fracChar = raw.match(/[½¼¾⅓⅔⅛]/)?.[0];
+    const numeric = raw.replace(/[½¼¾⅓⅔⅛]/g, "").trim();
+    if (numeric) {
+      if (/\d\s*\/\s*\d/.test(numeric)) {
+        const [a, b] = numeric.split("/").map((n) => Number(n.replace(",", ".")));
+        value = b ? (a ?? 0) / b : 0;
+      } else {
+        value = Number((numeric.split(/[-–]/)[0] ?? "").replace(",", "."));
+      }
+    }
+    if (fracChar) value += FRACTIONS[fracChar] ?? 0;
+    if (Number.isFinite(value) && value > 0) {
+      quantity = Math.round(value * 100) / 100;
+      cleaned = cleaned.slice(qm[0].length).trim();
+    }
   }
-  return {
-    quantity: Number.isFinite(q) ? q : null,
-    unit: null,
-    name: `${m[2] ? m[2] + " " : ""}${m[3] ?? ""}`.trim(),
-  };
+
+  // leading unit word
+  let unit: string | null = null;
+  const um = cleaned.match(/^([a-zA-ZäöåÄÖÅ.]+)\b\.?\s*/);
+  if (um) {
+    const candidate = (um[1] ?? "").replace(/\./g, "").toLowerCase();
+    const mapped = UNIT_MAP[candidate];
+    if (mapped) {
+      unit = mapped;
+      cleaned = cleaned.slice(um[0].length).trim();
+    }
+  }
+  cleaned = cleaned.replace(/^(of|,|-|–)\s+/i, "").trim();
+
+  return { quantity, unit, name: cleaned || line.trim() };
 }
 
 function findRecipeNode(node: unknown): Record<string, unknown> | null {
