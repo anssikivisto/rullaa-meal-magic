@@ -72,7 +72,9 @@ const PARSE_SYSTEM = `Olet suomenkielinen reseptijäsentäjä. Saat raakateksti�
 Poista emojit, hashtagit, kehotukset seurata tiliä ja muu jutustelu.
 Palauta JSON: title (lyhyt suomenkielinen otsikko), servings (annosmäärä numerona tai null),
 prep_time (valmistusaika minuutteina tai null), ingredients (jokaisella quantity numerona tai null,
-unit kuten g, dl, rkl, tl, kpl tai null, ja name pelkkänä raaka-aineen nimenä),
+unit kuten g, kg, dl, ml, l, rkl, tl, kpl, pkt, prk tai null, ja name pelkkänä raaka-aineen nimenä).
+TÄRKEÄÄ: erottele jokainen raaka-aine kolmeen kenttään. Määrä kuuluu VAIN quantity-kenttään, mittayksikkö VAIN unit-kenttään
+ja name-kentässä ei saa olla määrää eikä yksikköä (esim. "14 oz firm tofu" -> quantity 14, unit "oz", name "kiinteä tofu"),
 instructions (selkeät vaiheet järjestyksessä, ilman numerointia).
 Kirjoita kaikki suomeksi. Älä keksi raaka-aineita joita tekstissä ei ole.`;
 
