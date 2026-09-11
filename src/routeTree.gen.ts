@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OstoslistaRouteImport } from './routes/ostoslista'
 import { Route as RuokalistaRouteImport } from './routes/ruokalista'
 import { Route as ReseptiIdRouteImport } from './routes/resepti.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OstoslistaRoute = OstoslistaRouteImport.update({
+  id: '/ostoslista',
+  path: '/ostoslista',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RuokalistaRoute = RuokalistaRouteImport.update({
@@ -31,30 +37,34 @@ const ReseptiIdRoute = ReseptiIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ostoslista': typeof OstoslistaRoute
   '/ruokalista': typeof RuokalistaRoute
   '/resepti/$id': typeof ReseptiIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ostoslista': typeof OstoslistaRoute
   '/ruokalista': typeof RuokalistaRoute
   '/resepti/$id': typeof ReseptiIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ostoslista': typeof OstoslistaRoute
   '/ruokalista': typeof RuokalistaRoute
   '/resepti/$id': typeof ReseptiIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ruokalista' | '/resepti/$id'
+  fullPaths: '/' | '/ostoslista' | '/ruokalista' | '/resepti/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ruokalista' | '/resepti/$id'
-  id: '__root__' | '/' | '/ruokalista' | '/resepti/$id'
+  to: '/' | '/ostoslista' | '/ruokalista' | '/resepti/$id'
+  id: '__root__' | '/' | '/ostoslista' | '/ruokalista' | '/resepti/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  OstoslistaRoute: typeof OstoslistaRoute
   RuokalistaRoute: typeof RuokalistaRoute
   ReseptiIdRoute: typeof ReseptiIdRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ostoslista': {
+      id: '/ostoslista'
+      path: '/ostoslista'
+      fullPath: '/ostoslista'
+      preLoaderRoute: typeof OstoslistaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ruokalista': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  OstoslistaRoute: OstoslistaRoute,
   RuokalistaRoute: RuokalistaRoute,
   ReseptiIdRoute: ReseptiIdRoute,
 }
