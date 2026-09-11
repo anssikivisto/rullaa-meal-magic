@@ -434,6 +434,7 @@ export async function migrateGuestData(userId: string) {
         instructions: r.instructions,
         tags: r.tags,
         image_url: r.image_url ?? null,
+        notes: r.notes ?? null,
       })
       .select("id")
       .single();
@@ -441,14 +442,14 @@ export async function migrateGuestData(userId: string) {
   }
   if (plan.length) {
     await supabase.from("meal_plan").insert(
-      plan
-        .filter((p) => p.recipe_id && idMap.has(p.recipe_id))
-        .map((p) => ({
-          user_id: userId,
-          date: p.date,
-          recipe_id: idMap.get(p.recipe_id!)!,
-          meal_type: p.meal_type,
-        })),
+      plan.map((p) => ({
+        user_id: userId,
+        date: p.date,
+        recipe_id: p.recipe_id && idMap.has(p.recipe_id) ? idMap.get(p.recipe_id)! : null,
+        meal_type: p.meal_type,
+        status: p.status ?? null,
+        position: p.position ?? 0,
+      })),
     );
   }
   if (list.length) {
