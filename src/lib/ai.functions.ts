@@ -551,3 +551,47 @@ export const searchWebRecipes = createServerFn({ method: "POST" })
     }
     return results;
   });
+
+/* -------- general context-aware assistant -------- */
+
+export const assistantChat = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        context_label: z.string().max(60),
+        context_data: z.string().max(12000),
+        messages: z
+          .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) }))
+          .min(1)
+          .max(30),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ reply: string }> => {
+    const result = (await callGateway({
+      messages: [
+        {
+          role: "system",
+          content: `Olet Rullaa-sovelluksen suomenkielinen kokkiapuri. Vastaat lyhyesti ja käytännöllisesti suomeksi.
+Käytössäsi on käyttäjän nykyisen näkymän tiedot (${data.context_label}). Hyödynnä niitä vastauksissasi.
+Palauta JSON {"reply":"..."} jossa vastaus on selkeä ja korkeintaan muutama lause tai lyhyt lista.`,
+        },
+        { role: "user", content: `Näkymän tiedot:\n${data.context_data}` },
+        ...data.messages,
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "assistant",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: { reply: { type: "string" } },
+            required: ["reply"],
+          },
+        },
+      },
+    })) as { reply: string };
+    return result;
+  });
