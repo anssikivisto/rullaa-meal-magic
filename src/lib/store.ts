@@ -18,6 +18,7 @@ function toRecipe(row: Record<string, unknown>): Recipe {
     instructions: (row['instructions'] as string[]) ?? [],
     tags: (row['tags'] as string[]) ?? [],
     image_url: (row['image_url'] as string) ?? null,
+    notes: (row['notes'] as string) ?? null,
     created_at: row['created_at'] as string,
   };
 }
@@ -34,9 +35,10 @@ async function fetchRecipes({ userId }: Ctx): Promise<Recipe[]> {
   return (data ?? []).map(toRecipe);
 }
 
-export type RecipeInput = Omit<Recipe, "id" | "created_at" | "image_url"> & {
+export type RecipeInput = Omit<Recipe, "id" | "created_at" | "image_url" | "notes"> & {
   id?: string;
   image_url?: string | null;
+  notes?: string | null;
 };
 
 async function saveRecipe(ctx: Ctx, input: RecipeInput): Promise<Recipe> {
@@ -47,7 +49,13 @@ async function saveRecipe(ctx: Ctx, input: RecipeInput): Promise<Recipe> {
       localStore.setRecipes(updated);
       return updated.find((r) => r.id === input.id)!;
     }
-    const recipe: Recipe = { ...input, id: newId(), created_at: new Date().toISOString() };
+    const recipe: Recipe = {
+      ...input,
+      image_url: input.image_url ?? null,
+      notes: input.notes ?? null,
+      id: newId(),
+      created_at: new Date().toISOString(),
+    };
     localStore.setRecipes([recipe, ...all]);
     return recipe;
   }
@@ -61,6 +69,7 @@ async function saveRecipe(ctx: Ctx, input: RecipeInput): Promise<Recipe> {
     instructions: input.instructions,
     tags: input.tags,
     image_url: input.image_url ?? null,
+    notes: input.notes ?? null,
   };
   if (input.id) {
     const { data, error } = await supabase
