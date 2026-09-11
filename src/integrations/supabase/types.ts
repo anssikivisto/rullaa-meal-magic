@@ -20,7 +20,9 @@ export type Database = {
           date: string
           id: string
           meal_type: string
+          position: number
           recipe_id: string | null
+          status: string | null
           user_id: string
         }
         Insert: {
@@ -28,7 +30,9 @@ export type Database = {
           date: string
           id?: string
           meal_type?: string
+          position?: number
           recipe_id?: string | null
+          status?: string | null
           user_id: string
         }
         Update: {
@@ -36,7 +40,9 @@ export type Database = {
           date?: string
           id?: string
           meal_type?: string
+          position?: number
           recipe_id?: string | null
+          status?: string | null
           user_id?: string
         }
         Relationships: [
@@ -56,6 +62,7 @@ export type Database = {
           image_url: string | null
           ingredients: Json
           instructions: string[]
+          notes: string | null
           prep_time: number | null
           servings: number
           source_url: string | null
@@ -69,6 +76,7 @@ export type Database = {
           image_url?: string | null
           ingredients?: Json
           instructions?: string[]
+          notes?: string | null
           prep_time?: number | null
           servings?: number
           source_url?: string | null
@@ -82,6 +90,7 @@ export type Database = {
           image_url?: string | null
           ingredients?: Json
           instructions?: string[]
+          notes?: string | null
           prep_time?: number | null
           servings?: number
           source_url?: string | null

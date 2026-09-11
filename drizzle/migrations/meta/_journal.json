@@ -15,6 +15,13 @@
       "when": 1789067891953,
       "tag": "0001_add_recipe_image_url",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789097830605,
+      "tag": "0002_add_notes_and_meal_slots",
+      "breakpoints": true
     }
   ]
 }
