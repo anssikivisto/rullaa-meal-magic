@@ -139,33 +139,93 @@ async function fetchPlan({ userId }: Ctx): Promise<MealEntry[]> {
     date: r.date,
     recipe_id: r.recipe_id,
     meal_type: r.meal_type,
+    status: (r as { status: string | null }).status ?? null,
+    position: (r as { position: number | null }).position ?? 0,
   }));
 }
 
-async function setPlanEntry(ctx: Ctx, entry: { date: string; recipe_id: string | null }) {
+export type SlotInput = {
+  id?: string;
+  date: string;
+  meal_type: string;
+  recipe_id?: string | null;
+  status?: string | null;
+  position?: number;
+};
+
+async function upsertSlot(ctx: Ctx, slot: SlotInput) {
   if (!ctx.userId) {
-    const plan = localStore.plan().filter((p) => p.date !== entry.date);
-    if (entry.recipe_id) {
-      plan.push({
-        id: newId(),
-        date: entry.date,
-        recipe_id: entry.recipe_id,
-        meal_type: "paaruoka",
-      });
+    const plan = localStore.plan();
+    if (slot.id) {
+      localStore.setPlan(
+        plan.map((p) =>
+          p.id === slot.id
+            ? {
+                ...p,
+                meal_type: slot.meal_type,
+                recipe_id: slot.recipe_id ?? null,
+                status: slot.status ?? null,
+              }
+            : p,
+        ),
+      );
+      return;
     }
-    localStore.setPlan(plan);
+    localStore.setPlan([
+      ...plan,
+      {
+        id: newId(),
+        date: slot.date,
+        meal_type: slot.meal_type,
+        recipe_id: slot.recipe_id ?? null,
+        status: slot.status ?? null,
+        position: slot.position ?? plan.filter((p) => p.date === slot.date).length,
+      },
+    ]);
     return;
   }
-  await supabase.from("meal_plan").delete().eq("date", entry.date);
-  if (entry.recipe_id) {
-    const { error } = await supabase.from("meal_plan").insert({
-      user_id: ctx.userId,
-      date: entry.date,
-      recipe_id: entry.recipe_id,
-      meal_type: "paaruoka",
-    });
+  if (slot.id) {
+    const { error } = await supabase
+      .from("meal_plan")
+      .update({
+        meal_type: slot.meal_type,
+        recipe_id: slot.recipe_id ?? null,
+        status: slot.status ?? null,
+      })
+      .eq("id", slot.id);
     if (error) throw error;
+    return;
   }
+  const { error } = await supabase.from("meal_plan").insert({
+    user_id: ctx.userId,
+    date: slot.date,
+    meal_type: slot.meal_type,
+    recipe_id: slot.recipe_id ?? null,
+    status: slot.status ?? null,
+    position: slot.position ?? 0,
+  });
+  if (error) throw error;
+}
+
+async function removeSlot(ctx: Ctx, id: string) {
+  if (!ctx.userId) {
+    localStore.setPlan(localStore.plan().filter((p) => p.id !== id));
+    return;
+  }
+  const { error } = await supabase.from("meal_plan").delete().eq("id", id);
+  if (error) throw error;
+}
+
+async function ensureWeekSlots(ctx: Ctx, dates: string[], defaults: readonly string[]) {
+  const existing = await fetchPlan(ctx);
+  const missing = dates.filter((d) => !existing.some((p) => p.date === d));
+  if (!missing.length) return false;
+  for (const date of missing) {
+    for (let i = 0; i < defaults.length; i++) {
+      await upsertSlot(ctx, { date, meal_type: defaults[i]!, position: i });
+    }
+  }
+  return true;
 }
 
 export function usePlan() {
@@ -177,14 +237,32 @@ export function usePlan() {
   });
 }
 
-export function useSetPlanEntry() {
+export function usePlanActions() {
   const { userId } = useAuth();
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (entry: { date: string; recipe_id: string | null }) =>
-      setPlanEntry({ userId }, entry),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["plan"] }),
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["plan"] });
+
+  const setSlot = useMutation({
+    mutationFn: (slot: SlotInput) => upsertSlot({ userId }, slot),
+    onSuccess: invalidate,
   });
+  const addSlot = useMutation({
+    mutationFn: (slot: SlotInput) => upsertSlot({ userId }, slot),
+    onSuccess: invalidate,
+  });
+  const deleteSlot = useMutation({
+    mutationFn: (id: string) => removeSlot({ userId }, id),
+    onSuccess: invalidate,
+  });
+  const ensureWeek = useMutation({
+    mutationFn: ({ dates, defaults }: { dates: string[]; defaults: readonly string[] }) =>
+      ensureWeekSlots({ userId }, dates, defaults),
+    onSuccess: (changed) => {
+      if (changed) invalidate();
+    },
+  });
+
+  return { setSlot, addSlot, deleteSlot, ensureWeek };
 }
 
 /* ---------------- shopping list ---------------- */
