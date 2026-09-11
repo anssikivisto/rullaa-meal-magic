@@ -14,6 +14,7 @@ export type Recipe = {
   instructions: string[];
   tags: string[];
   image_url: string | null;
+  notes: string | null;
   created_at: string;
 };
 
@@ -22,6 +23,8 @@ export type MealEntry = {
   date: string; // yyyy-mm-dd
   recipe_id: string | null;
   meal_type: string;
+  status: string | null;
+  position: number;
 };
 
 export type ShoppingItem = {
@@ -34,6 +37,16 @@ export type ShoppingItem = {
   recipe_id: string | null;
   created_at: string;
 };
+
+export const MEAL_TYPES = ["Aamiainen", "Lounas", "Päivällinen", "Välipala"] as const;
+
+export const DEFAULT_SLOTS = ["Lounas", "Päivällinen"] as const;
+
+export const MEAL_STATUSES = [
+  { key: "toissa", label: "Töissä/Koulussa" },
+  { key: "muualla", label: "Syödään muualla" },
+  { key: "tahteet", label: "Tähteet" },
+] as const;
 
 export const CATEGORIES: { key: string; label: string; emoji: string }[] = [
   { key: "kasvikset", label: "Kasvikset & Hedelmät", emoji: "🥬" },
