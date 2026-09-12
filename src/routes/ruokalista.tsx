@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Loader2, ShoppingBasket, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Minus, Plus, ShoppingBasket, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { useAssistantContext } from "@/components/Assistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,8 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { usePlan, useRecipes, useSetPlanEntry, useShoppingActions } from "@/lib/store";
-import { WEEKDAYS } from "@/lib/types";
+import { usePlan, usePlanActions, useRecipes, useShoppingActions } from "@/lib/store";
+import { DEFAULT_SLOTS, MEAL_STATUSES, MEAL_TYPES, WEEKDAYS } from "@/lib/types";
+import type { MealEntry, Recipe } from "@/lib/types";
 import { shortDate, weekDates } from "@/lib/week";
 import { generateWeekPlan } from "@/lib/ai.functions";
 import { toast } from "sonner";
@@ -23,7 +25,7 @@ export const Route = createFileRoute("/ruokalista")({
       { title: "Viikon ruokalista – Rullaa" },
       {
         name: "description",
-        content: "Suunnittele viikon ruoat maanantaista sunnuntaihin ja anna AI:n ehdottaa lista.",
+        content: "Suunnittele viikon ateriat aterioittain ja anna AI:n ehdottaa koko viikko.",
       },
       { property: "og:title", content: "Viikon ruokalista – Rullaa" },
       { property: "og:description", content: "Suunnittele viikon ateriat helposti." },
@@ -33,21 +35,42 @@ export const Route = createFileRoute("/ruokalista")({
 });
 
 const NONE = "__none__";
+const STATUS_PREFIX = "status:";
 
 function Ruokalista() {
   const [weekOffset, setWeekOffset] = useState(0);
   const dates = weekDates(weekOffset);
   const { data: recipes = [] } = useRecipes();
   const { data: plan = [] } = usePlan();
-  const setEntry = useSetPlanEntry();
+  const { setSlot, addSlot, deleteSlot, ensureWeek } = usePlanActions();
   const { addRecipes } = useShoppingActions();
   const [wish, setWish] = useState("");
   const [generating, setGenerating] = useState(false);
 
-  const recipeFor = (date: string) => {
-    const entry = plan.find((p) => p.date === date);
-    return entry?.recipe_id ? recipes.find((r) => r.id === entry.recipe_id) : undefined;
-  };
+  useEffect(() => {
+    ensureWeek.mutate({ dates, defaults: DEFAULT_SLOTS });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekOffset]);
+
+  const slotsFor = (date: string): MealEntry[] =>
+    plan
+      .filter((p) => p.date === date)
+      .sort((a, b) => a.position - b.position || a.meal_type.localeCompare(b.meal_type));
+
+  const recipeById = (id: string | null) => recipes.find((r) => r.id === id);
+
+  useAssistantContext({
+    label: "Viikon ruokalista",
+    data: dates.map((date, i) => ({
+      paiva: WEEKDAYS[i],
+      pvm: date,
+      ateriat: slotsFor(date).map((s) => ({
+        tyyppi: s.meal_type,
+        resepti: recipeById(s.recipe_id)?.title ?? null,
+        tila: s.status,
+      })),
+    })),
+  });
 
   async function generate() {
     if (!recipes.length) {
@@ -64,7 +87,26 @@ function Ruokalista() {
       });
       for (const item of result) {
         const date = dates[item.day];
-        if (date) await setEntry.mutateAsync({ date, recipe_id: item.recipe_id });
+        if (!date) continue;
+        const slots = slotsFor(date);
+        const target =
+          slots.find((s) => s.meal_type === "Päivällinen") ?? slots[slots.length - 1] ?? null;
+        if (target) {
+          await setSlot.mutateAsync({
+            id: target.id,
+            date,
+            meal_type: target.meal_type,
+            recipe_id: item.recipe_id,
+            status: null,
+          });
+        } else {
+          await addSlot.mutateAsync({
+            date,
+            meal_type: "Päivällinen",
+            recipe_id: item.recipe_id,
+            position: 0,
+          });
+        }
       }
       toast.success("Viikon ruokalista luotu.");
     } catch (e) {
@@ -75,13 +117,16 @@ function Ruokalista() {
   }
 
   async function addWeekToList() {
-    const chosen = dates.map(recipeFor).filter(Boolean);
+    const chosen: Recipe[] = dates
+      .flatMap((d) => slotsFor(d))
+      .map((s) => recipeById(s.recipe_id))
+      .filter((r): r is Recipe => !!r);
     if (!chosen.length) {
-      toast.error("Viikolle ei ole vielä valittu ruokia.");
+      toast.error("Viikolle ei ole vielä valittu reseptejä.");
       return;
     }
-    await addRecipes.mutateAsync(chosen.map((r) => ({ recipe: r! })));
-    toast.success("Koko viikko lisätty ostoslistalle.");
+    await addRecipes.mutateAsync(chosen.map((recipe) => ({ recipe })));
+    toast.success("Viikon reseptien ainekset lisätty ostoslistalle.");
   }
 
   return (
@@ -119,40 +164,118 @@ function Ruokalista() {
         </Button>
       </div>
 
-      <ul className="mt-4 space-y-2">
+      <ul className="mt-4 space-y-3">
         {dates.map((date, i) => {
-          const r = recipeFor(date);
+          const slots = slotsFor(date);
           return (
-            <li key={date} className="card-soft px-4 py-3">
+            <li key={date} className="card-soft space-y-3 px-4 py-3">
               <div className="flex items-baseline justify-between">
                 <span className="font-display text-lg">{WEEKDAYS[i]}</span>
                 <span className="text-xs text-muted-foreground">{shortDate(date)}</span>
               </div>
-              <Select
-                value={r?.id ?? NONE}
-                onValueChange={(v) =>
-                  setEntry.mutate({ date, recipe_id: v === NONE ? null : v })
+
+              {slots.length === 0 && (
+                <p className="text-sm text-muted-foreground">Ei aterioita tälle päivälle.</p>
+              )}
+
+              {slots.map((slot) => {
+                const value = slot.recipe_id
+                  ? slot.recipe_id
+                  : slot.status
+                    ? `${STATUS_PREFIX}${slot.status}`
+                    : NONE;
+                return (
+                  <div key={slot.id} className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={slot.meal_type}
+                        onValueChange={(v) =>
+                          setSlot.mutate({
+                            id: slot.id,
+                            date,
+                            meal_type: v,
+                            recipe_id: slot.recipe_id,
+                            status: slot.status,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-36 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MEAL_TYPES.map((t) => (
+                            <SelectItem key={t} value={t}>
+                              {t}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Poista ateria"
+                        onClick={() => deleteSlot.mutate(slot.id)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <Select
+                      value={value}
+                      onValueChange={(v) =>
+                        setSlot.mutate({
+                          id: slot.id,
+                          date,
+                          meal_type: slot.meal_type,
+                          recipe_id: v === NONE || v.startsWith(STATUS_PREFIX) ? null : v,
+                          status: v.startsWith(STATUS_PREFIX)
+                            ? v.slice(STATUS_PREFIX.length)
+                            : null,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Valitse resepti tai tilanne" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Ei valintaa</SelectItem>
+                        {MEAL_STATUSES.map((s) => (
+                          <SelectItem key={s.key} value={`${STATUS_PREFIX}${s.key}`}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                        {recipes.map((rec) => (
+                          <SelectItem key={rec.id} value={rec.id}>
+                            {rec.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  addSlot.mutate({
+                    date,
+                    meal_type:
+                      MEAL_TYPES.find((t) => !slots.some((s) => s.meal_type === t)) ?? "Välipala",
+                    position: slots.length,
+                  })
                 }
               >
-                <SelectTrigger className="mt-2 w-full">
-                  <SelectValue placeholder="Valitse resepti" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Ei valintaa</SelectItem>
-                  {recipes.map((rec) => (
-                    <SelectItem key={rec.id} value={rec.id}>
-                      {rec.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Plus className="mr-1 h-4 w-4" /> Lisää ateria
+              </Button>
             </li>
           );
         })}
       </ul>
 
       <Button variant="outline" className="mt-4 w-full" onClick={addWeekToList}>
-        <ShoppingBasket className="mr-2 h-4 w-4" /> Lisää koko viikko ostoslistalle
+        <ShoppingBasket className="mr-2 h-4 w-4" /> Lisää viikon reseptit ostoslistalle
       </Button>
     </AppShell>
   );
