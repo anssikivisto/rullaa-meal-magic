@@ -19,6 +19,7 @@ export type DraftRecipe = {
   ingredients: Ingredient[];
   instructions: string[];
   tags: string[];
+  notes?: string | null;
 };
 
 export function emptyDraft(): DraftRecipe {
@@ -31,6 +32,7 @@ export function emptyDraft(): DraftRecipe {
     ingredients: [{ quantity: null, unit: null, name: "" }],
     instructions: [""],
     tags: [],
+    notes: null,
   };
 }
 
@@ -45,6 +47,7 @@ export function recipeToDraft(r: Recipe): DraftRecipe {
     ingredients: r.ingredients.length ? r.ingredients : [{ quantity: null, unit: null, name: "" }],
     instructions: r.instructions.length ? r.instructions : [""],
     tags: r.tags,
+    notes: r.notes,
   };
 }
 
@@ -310,6 +313,17 @@ export function RecipeEditor({
             Lisää
           </Button>
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="notes">Omat muistiinpanot</Label>
+        <Textarea
+          id="notes"
+          rows={3}
+          value={draft.notes ?? ""}
+          onChange={(e) => set({ notes: e.target.value || null })}
+          placeholder="Esim. uunilämpö 200 °C, lapset tykkäävät ilman chiliä"
+        />
       </div>
 
       <div className="flex gap-2 pt-2">
