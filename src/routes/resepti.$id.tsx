@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChefHat, Clock, ExternalLink, Minus, Pencil, Plus, ShoppingBasket, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChefHat, Clock, ExternalLink, Minus, Pencil, Plus, ShoppingBasket, Sparkles, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { TagChip } from "@/components/TagChip";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RecipeEditor, recipeToDraft, type DraftRecipe } from "@/components/RecipeEditor";
 import { useDeleteRecipe, useRecipes, useSaveRecipe, useShoppingActions } from "@/lib/store";
+import { useAssistant, useAssistantContext } from "@/components/Assistant";
 import { formatQuantity, scaleIngredient } from "@/lib/categorize";
 import { toast } from "sonner";
 
@@ -59,8 +60,10 @@ function ReseptiSivu() {
   const save = useSaveRecipe();
   const del = useDeleteRecipe();
   const { addRecipes } = useShoppingActions();
+  const assistant = useAssistant();
 
   useWakeLock(cookMode);
+  useAssistantContext(recipe ? { label: "Resepti", data: recipe, recipe } : null);
 
   if (isLoading) {
     return (
@@ -99,6 +102,13 @@ function ReseptiSivu() {
               <X className="mr-1 h-4 w-4" /> Lopeta
             </Button>
           </div>
+          {recipe.image_url ? (
+            <img
+              src={recipe.image_url}
+              alt={recipe.title}
+              className="mb-4 h-48 w-full rounded-2xl object-cover"
+            />
+          ) : null}
           <h1 className="font-display text-4xl leading-tight">{recipe.title}</h1>
           <p className="mt-2 text-lg text-muted-foreground">{current} annosta</p>
 
@@ -120,6 +130,12 @@ function ReseptiSivu() {
               </li>
             ))}
           </ol>
+          {recipe.notes ? (
+            <>
+              <h2 className="mt-8 font-display text-2xl">Omat muistiinpanot</h2>
+              <p className="mt-2 whitespace-pre-line text-xl">{recipe.notes}</p>
+            </>
+          ) : null}
           <p className="py-10 text-center text-sm text-muted-foreground">
             Näyttö pysyy hereillä kokkaustilassa.
           </p>
@@ -140,6 +156,13 @@ function ReseptiSivu() {
         <ArrowLeft className="h-4 w-4" /> Reseptit
       </Link>
 
+      {recipe.image_url ? (
+        <img
+          src={recipe.image_url}
+          alt={recipe.title}
+          className="mb-4 h-52 w-full rounded-2xl object-cover"
+        />
+      ) : null}
       <h1 className="font-display text-3xl leading-tight">{recipe.title}</h1>
       <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         {recipe.prep_time ? (
@@ -190,6 +213,27 @@ function ReseptiSivu() {
         </div>
       </div>
 
+      <div className="mt-2 flex flex-wrap gap-2">
+        {[2, 4, 6, 8].map((n) => (
+          <Button
+            key={n}
+            size="sm"
+            variant={current === n ? "default" : "outline"}
+            onClick={() => setServings(n)}
+          >
+            {n} hengelle
+          </Button>
+        ))}
+      </div>
+
+      <Button
+        variant="outline"
+        className="mt-3 w-full"
+        onClick={() => assistant.open({ label: "Resepti", data: recipe, recipe })}
+      >
+        <Sparkles className="mr-2 h-4 w-4" /> Avaa AI-Apurissa
+      </Button>
+
       <h2 className="mt-6 font-display text-xl">Ainekset</h2>
       <ul className="card-soft mt-2 divide-y divide-border px-4">
         {scaled.map((i, idx) => (
@@ -221,6 +265,15 @@ function ReseptiSivu() {
           </li>
         ))}
       </ol>
+
+      {recipe.notes ? (
+        <>
+          <h2 className="mt-6 font-display text-xl">Omat muistiinpanot</h2>
+          <p className="card-soft mt-2 whitespace-pre-line px-4 py-3 text-sm leading-relaxed">
+            {recipe.notes}
+          </p>
+        </>
+      ) : null}
 
       <div className="mt-6 flex gap-2">
         <Button variant="outline" className="flex-1" onClick={() => setEditDraft(recipeToDraft(recipe))}>
@@ -259,6 +312,8 @@ function ReseptiSivu() {
                   ingredients: editDraft.ingredients.filter((i) => i.name.trim()),
                   instructions: editDraft.instructions.filter((s) => s.trim()),
                   tags: editDraft.tags,
+                  notes: editDraft.notes,
+                  image_url: editDraft.image_url,
                 });
                 toast.success("Muutokset tallennettu.");
                 setEditDraft(null);
