@@ -1,0 +1,15 @@
+{
+  "name": "Rullaa – reseptit, ruokalista ja ostoslista",
+  "short_name": "Rullaa",
+  "description": "Tallenna reseptit, suunnittele viikon ruokalista ja saa valmis ostoslista.",
+  "lang": "fi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#faf6ef",
+  "theme_color": "#4c7a4b",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
