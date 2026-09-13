@@ -312,8 +312,8 @@ function ReseptiSivu() {
                   ingredients: editDraft.ingredients.filter((i) => i.name.trim()),
                   instructions: editDraft.instructions.filter((s) => s.trim()),
                   tags: editDraft.tags,
-                  notes: editDraft.notes,
-                  image_url: editDraft.image_url,
+                  notes: editDraft.notes ?? null,
+                  image_url: editDraft.image_url ?? null,
                 });
                 toast.success("Muutokset tallennettu.");
                 setEditDraft(null);
