@@ -151,7 +151,11 @@ function RecipeCard({ recipe: r }: { recipe: Recipe }) {
           variant="ghost"
           size="sm"
           className="text-primary"
-          onClick={() => assistant.open({ label: "Resepti", data: r, recipe: r })}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            assistant.open({ label: "Resepti", data: r, recipe: r });
+          }}
         >
           <Sparkles className="mr-1 h-4 w-4" /> Avaa AI-Apurissa
         </Button>
