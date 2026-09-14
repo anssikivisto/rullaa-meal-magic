@@ -50,7 +50,6 @@ export function AppShell({ children, action }: { children: ReactNode; action?: R
             })}
           </ul>
         </nav>
-      </div>
-    </AssistantProvider>
+    </div>
   );
 }
