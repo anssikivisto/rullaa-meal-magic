@@ -2,7 +2,6 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { BookOpen, CalendarDays, Compass, ShoppingBasket, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { RullaaLogo } from "./RullaaLogo";
-import { AssistantProvider } from "./Assistant";
 import { cn } from "@/lib/utils";
 
 const TABS = [
