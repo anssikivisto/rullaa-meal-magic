@@ -351,6 +351,7 @@ export const generateWeekPlan = createServerFn({ method: "POST" })
           .array(z.object({ id: z.string(), title: z.string(), tags: z.array(z.string()) }))
           .min(1),
         wish: z.string().max(300).optional(),
+        profile: z.string().max(2000).optional(),
       })
       .parse(input),
   )
@@ -365,7 +366,7 @@ Käytä vain annettuja recipe_id -arvoja. Palauta JSON {"plan":[{"day":0,"recipe
         },
         {
           role: "user",
-          content: `Toive: ${data.wish || "ei erityistoivetta"}\nReseptit:\n${data.recipes
+          content: `Toive: ${data.wish || "ei erityistoivetta"}\nMakuprofiili: ${data.profile || "ei tiedossa"}\nReseptit:\n${data.recipes
             .map((r) => `${r.id} | ${r.title} | ${r.tags.join(", ")}`)
             .join("\n")}`,
         },
@@ -562,6 +563,7 @@ export const assistantChat = createServerFn({ method: "POST" })
       .object({
         context_label: z.string().max(60),
         context_data: z.string().max(12000),
+        profile: z.string().max(2000).optional(),
         messages: z
           .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) }))
           .min(1)
@@ -576,6 +578,7 @@ export const assistantChat = createServerFn({ method: "POST" })
           role: "system",
           content: `Olet Rullaa-sovelluksen suomenkielinen kokkiapuri. Vastaat lyhyesti ja käytännöllisesti suomeksi.
 Käytössäsi on käyttäjän nykyisen näkymän tiedot (${data.context_label}). Hyödynnä niitä vastauksissasi.
+${data.profile ? `Käyttäjän makuprofiili: ${data.profile}. Noudata sitä ehdotuksissasi.` : ""}
 Palauta JSON {"reply":"..."} jossa vastaus on selkeä ja korkeintaan muutama lause tai lyhyt lista.`,
         },
         { role: "user", content: `Näkymän tiedot:\n${data.context_data}` },
@@ -596,4 +599,144 @@ Palauta JSON {"reply":"..."} jossa vastaus on selkeä ja korkeintaan muutama lau
       },
     })) as { reply: string };
     return result;
+  });
+
+/* -------- taste profile + personalised ideas -------- */
+
+export const buildTasteProfile = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        tags: z.array(z.string().max(60)).max(20),
+        dislikes: z.string().max(500).optional(),
+        recipes: z
+          .array(
+            z.object({
+              title: z.string(),
+              tags: z.array(z.string()).optional(),
+              ingredients: z.array(z.string()).optional(),
+            }),
+          )
+          .max(60),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<{ summary: string }> => {
+    const list = data.recipes
+      .map(
+        (r) =>
+          `${r.title} | ${(r.tags ?? []).join(", ")} | ${(r.ingredients ?? []).slice(0, 12).join(", ")}`,
+      )
+      .join("\n");
+    const result = (await callGateway({
+      messages: [
+        {
+          role: "system",
+          content: `Kirjoitat lyhyen suomenkielisen makuprofiilin käyttäjälle.
+Käytä käyttäjän valitsemia tageja ja hänen tallentamiaan reseptejä.
+Palauta JSON {"summary":"..."} – 2–3 lausetta, jossa kuvaat mistä ruoasta käyttäjä pitää,
+mitkä raaka-aineet toistuvat, kuinka nopeaa arkiruokaa hän suosii ja mitä hän välttää.
+Jos reseptejä ei ole, nojaa pelkkiin tageihin. Puhuttele käyttäjää muodossa "Suosit...".`,
+        },
+        {
+          role: "user",
+          content: `Valitut tagit: ${data.tags.join(", ") || "ei valintoja"}
+Vältettävät: ${data.dislikes || "ei mainittu"}
+Reseptit:
+${list || "ei tallennettuja reseptejä"}`,
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "profile",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: { summary: { type: "string" } },
+            required: ["summary"],
+          },
+        },
+      },
+    })) as { summary: string };
+    return result;
+  });
+
+export type RecipeIdea = {
+  title: string;
+  description: string;
+  prep_time: number | null;
+  servings: number | null;
+  reason: string;
+  tags: string[];
+};
+
+export const suggestRecipeIdeas = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        profile: z.string().max(2000),
+        tags: z.array(z.string().max(60)).max(20),
+        dislikes: z.string().max(500).optional(),
+        servings: z.number().min(1).max(20).optional(),
+        existing: z.array(z.string().max(160)).max(80),
+        refine: z.string().max(300).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<RecipeIdea[]> => {
+    const result = (await callGateway({
+      messages: [
+        {
+          role: "system",
+          content: `Ehdotat suomenkieliselle kotikokille 6–8 uutta reseptiä, jotka hän voisi haluta lisätä omaan reseptikirjastoonsa.
+Käytä käyttäjän makuprofiilia. Vaihtele ruokalajeja ja raaka-aineita, pidä ne arkiseen suomalaiseen kauppaan sopivina.
+Älä ehdota reseptejä, jotka ovat jo listassa "jo tallennetut".
+Palauta JSON {"ideas":[{"title","description","prep_time","servings","reason","tags"}]}.
+description = 1 lause siitä mikä ruoka on. reason = 1 lause miksi tämä sopii juuri tälle käyttäjälle. tags = 1–3 lyhyttä suomenkielistä tagia.`,
+        },
+        {
+          role: "user",
+          content: `Makuprofiili: ${data.profile || "ei kuvausta"}
+Tagit: ${data.tags.join(", ") || "ei valintoja"}
+Vältettävät: ${data.dislikes || "ei mainittu"}
+Annosmäärä: ${data.servings ?? 4}
+Tarkennus: ${data.refine || "ei tarkennusta"}
+Jo tallennetut: ${data.existing.join("; ") || "ei yhtään"}`,
+        },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "ideas",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              ideas: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    prep_time: { type: ["number", "null"] },
+                    servings: { type: ["number", "null"] },
+                    reason: { type: "string" },
+                    tags: { type: "array", items: { type: "string" } },
+                  },
+                  required: ["title", "description", "prep_time", "servings", "reason", "tags"],
+                },
+              },
+            },
+            required: ["ideas"],
+          },
+        },
+      },
+    })) as { ideas: RecipeIdea[] };
+    const seen = new Set(data.existing.map((t) => t.toLowerCase().trim()));
+    return (result.ideas ?? []).filter((i) => !seen.has(i.title.toLowerCase().trim())).slice(0, 8);
   });

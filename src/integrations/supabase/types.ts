@@ -144,6 +144,33 @@ export type Database = {
           },
         ]
       }
+      taste_profile: {
+        Row: {
+          default_servings: number
+          dislikes: string | null
+          summary: string | null
+          tags: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          default_servings?: number
+          dislikes?: string | null
+          summary?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          default_servings?: number
+          dislikes?: string | null
+          summary?: string | null
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

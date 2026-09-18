@@ -38,6 +38,31 @@ export type ShoppingItem = {
   created_at: string;
 };
 
+export type TasteProfile = {
+  tags: string[];
+  dislikes: string | null;
+  default_servings: number;
+  summary: string | null;
+  updated_at: string | null;
+};
+
+export const TASTE_TAGS = [
+  "kasvispainotteinen",
+  "sekasyöjä",
+  "vegaani",
+  "kala",
+  "kana",
+  "terveellistä",
+  "nopeaa (alle 30 min)",
+  "uuniruoat",
+  "budjetti",
+  "mausteinen",
+  "lapsiystävällinen",
+  "gluteeniton",
+  "maidoton",
+  "meal prep",
+] as const;
+
 export const MEAL_TYPES = ["Aamiainen", "Lounas", "Päivällinen", "Välipala"] as const;
 
 export const DEFAULT_SLOTS = ["Lounas", "Päivällinen"] as const;

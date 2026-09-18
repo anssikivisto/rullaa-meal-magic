@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { localStore, newId } from "./local-store";
-import type { Ingredient, MealEntry, Recipe, ShoppingItem } from "./types";
+import type { Ingredient, MealEntry, Recipe, ShoppingItem, TasteProfile } from "./types";
 import { aggregate, ingredientsToItems } from "./categorize";
 
 type Ctx = { userId: string | null };
@@ -412,13 +412,89 @@ export function useShoppingActions() {
   return { addRecipes, addManual, toggle, remove, clear };
 }
 
+/* ---------------- taste profile ---------------- */
+
+async function fetchProfile({ userId }: Ctx): Promise<TasteProfile | null> {
+  if (!userId) return localStore.profile();
+  const { data, error } = await supabase
+    .from("taste_profile")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    tags: data.tags ?? [],
+    dislikes: data.dislikes ?? null,
+    default_servings: data.default_servings ?? 4,
+    summary: data.summary ?? null,
+    updated_at: data.updated_at ?? null,
+  };
+}
+
+async function saveProfile(ctx: Ctx, input: Omit<TasteProfile, "updated_at">) {
+  const value: TasteProfile = { ...input, updated_at: new Date().toISOString() };
+  if (!ctx.userId) {
+    localStore.setProfile(value);
+    return value;
+  }
+  const { error } = await supabase.from("taste_profile").upsert(
+    {
+      user_id: ctx.userId,
+      tags: value.tags,
+      dislikes: value.dislikes,
+      default_servings: value.default_servings,
+      summary: value.summary,
+      updated_at: value.updated_at!,
+    },
+    { onConflict: "user_id" },
+  );
+  if (error) throw error;
+  return value;
+}
+
+export function useTasteProfile() {
+  const { userId, loading } = useAuth();
+  return useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => fetchProfile({ userId }),
+    enabled: !loading,
+  });
+}
+
+export function useSaveTasteProfile() {
+  const { userId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Omit<TasteProfile, "updated_at">) => saveProfile({ userId }, input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+}
+
 /* ---------------- guest -> account migration ---------------- */
 
 export async function migrateGuestData(userId: string) {
   const recipes = localStore.recipes();
   const plan = localStore.plan();
   const list = localStore.list();
-  if (!recipes.length && !plan.length && !list.length) return false;
+  const profile = localStore.profile();
+  if (!recipes.length && !plan.length && !list.length && !profile) return false;
+
+  if (profile) {
+    await supabase.from("taste_profile").upsert(
+      {
+        user_id: userId,
+        tags: profile.tags ?? [],
+        dislikes: profile.dislikes ?? null,
+        default_servings: profile.default_servings ?? 4,
+        summary: profile.summary ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
+  }
 
   const idMap = new Map<string, string>();
   for (const r of recipes) {
