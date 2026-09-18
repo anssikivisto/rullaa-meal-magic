@@ -1,9 +1,10 @@
-import type { MealEntry, Recipe, ShoppingItem } from "./types";
+import type { MealEntry, Recipe, ShoppingItem, TasteProfile } from "./types";
 
 const KEYS = {
   recipes: "rullaa.recipes",
   plan: "rullaa.plan",
   list: "rullaa.list",
+  profile: "rullaa.profile",
 } as const;
 
 function read<T>(key: string): T[] {
@@ -22,6 +23,19 @@ function write<T>(key: string, value: T[]) {
 }
 
 export const localStore = {
+  profile: (): TasteProfile | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(KEYS.profile);
+      return raw ? (JSON.parse(raw) as TasteProfile) : null;
+    } catch {
+      return null;
+    }
+  },
+  setProfile: (p: TasteProfile) => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(KEYS.profile, JSON.stringify(p));
+  },
   recipes: () => read<Recipe>(KEYS.recipes),
   setRecipes: (r: Recipe[]) => write(KEYS.recipes, r),
   plan: () => read<MealEntry>(KEYS.plan),
