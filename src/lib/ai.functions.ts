@@ -351,6 +351,7 @@ export const generateWeekPlan = createServerFn({ method: "POST" })
           .array(z.object({ id: z.string(), title: z.string(), tags: z.array(z.string()) }))
           .min(1),
         wish: z.string().max(300).optional(),
+        profile: z.string().max(2000).optional(),
       })
       .parse(input),
   )
@@ -562,6 +563,7 @@ export const assistantChat = createServerFn({ method: "POST" })
       .object({
         context_label: z.string().max(60),
         context_data: z.string().max(12000),
+        profile: z.string().max(2000).optional(),
         messages: z
           .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) }))
           .min(1)
@@ -576,6 +578,7 @@ export const assistantChat = createServerFn({ method: "POST" })
           role: "system",
           content: `Olet Rullaa-sovelluksen suomenkielinen kokkiapuri. Vastaat lyhyesti ja käytännöllisesti suomeksi.
 Käytössäsi on käyttäjän nykyisen näkymän tiedot (${data.context_label}). Hyödynnä niitä vastauksissasi.
+${data.profile ? `Käyttäjän makuprofiili: ${data.profile}. Noudata sitä ehdotuksissasi.` : ""}
 Palauta JSON {"reply":"..."} jossa vastaus on selkeä ja korkeintaan muutama lause tai lyhyt lista.`,
         },
         { role: "user", content: `Näkymän tiedot:\n${data.context_data}` },
