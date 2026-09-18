@@ -366,7 +366,7 @@ Käytä vain annettuja recipe_id -arvoja. Palauta JSON {"plan":[{"day":0,"recipe
         },
         {
           role: "user",
-          content: `Toive: ${data.wish || "ei erityistoivetta"}\nReseptit:\n${data.recipes
+          content: `Toive: ${data.wish || "ei erityistoivetta"}\nMakuprofiili: ${data.profile || "ei tiedossa"}\nReseptit:\n${data.recipes
             .map((r) => `${r.id} | ${r.title} | ${r.tags.join(", ")}`)
             .join("\n")}`,
         },
