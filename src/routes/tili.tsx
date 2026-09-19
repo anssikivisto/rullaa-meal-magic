@@ -34,6 +34,19 @@ function Tili() {
   const [busy, setBusy] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const qc = useQueryClient();
+  const { data: profile, isLoading: profileLoading } = useTasteProfile();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [asked, setAsked] = useState(false);
+
+  // Kysy makuprofiili kerran, jos sitä ei vielä ole.
+  useEffect(() => {
+    if (profileLoading || asked || profile) return;
+    if (typeof window === "undefined") return;
+    if (window.localStorage.getItem("rullaa.profile.asked")) return;
+    window.localStorage.setItem("rullaa.profile.asked", "1");
+    setAsked(true);
+    setProfileOpen(true);
+  }, [profileLoading, profile, asked]);
 
   async function google() {
     setBusy(true);
