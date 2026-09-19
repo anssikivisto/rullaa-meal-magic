@@ -91,6 +91,7 @@ function Ruokalista() {
         data: {
           recipes: recipes.map((r) => ({ id: r.id, title: r.title, tags: r.tags })),
           wish: wish.trim() || undefined,
+          profile: profileToText(taste),
         },
       });
       for (const item of result) {
