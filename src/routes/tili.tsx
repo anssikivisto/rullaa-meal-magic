@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Loader2, LogOut, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, LogOut, Mail, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { TasteProfileDialog } from "@/components/TasteProfileDialog";
+import { useTasteProfile } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +34,19 @@ function Tili() {
   const [busy, setBusy] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const qc = useQueryClient();
+  const { data: profile, isLoading: profileLoading } = useTasteProfile();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [asked, setAsked] = useState(false);
+
+  // Kysy makuprofiili kerran, jos sitä ei vielä ole.
+  useEffect(() => {
+    if (profileLoading || asked || profile) return;
+    if (typeof window === "undefined") return;
+    if (window.localStorage.getItem("rullaa.profile.asked")) return;
+    window.localStorage.setItem("rullaa.profile.asked", "1");
+    setAsked(true);
+    setProfileOpen(true);
+  }, [profileLoading, profile, asked]);
 
   async function google() {
     setBusy(true);
@@ -131,6 +146,39 @@ function Tili() {
           )}
         </div>
       )}
+
+      <div className="card-soft mt-4 space-y-3 px-4 py-4">
+        <div>
+          <p className="font-display text-xl">Makuprofiili</p>
+          <p className="text-sm text-muted-foreground">
+            AI-apuri ehdottaa reseptejä ja viikon ruokalistan makusi mukaan.
+          </p>
+        </div>
+
+        {profile?.summary && <p className="text-sm">{profile.summary}</p>}
+
+        {profile?.tags?.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {profile.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Et ole vielä täyttänyt makuprofiilia.</p>
+        )}
+
+        <Button className="w-full" variant="outline" onClick={() => setProfileOpen(true)}>
+          <Sparkles className="mr-2 h-4 w-4" />
+          {profile ? "Muokkaa makuprofiilia" : "Luo makuprofiili"}
+        </Button>
+      </div>
+
+      <TasteProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </AppShell>
   );
 }

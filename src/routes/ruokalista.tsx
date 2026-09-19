@@ -12,7 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { usePlan, usePlanActions, useRecipes, useShoppingActions } from "@/lib/store";
+import {
+  usePlan,
+  usePlanActions,
+  useRecipes,
+  useShoppingActions,
+  useTasteProfile,
+} from "@/lib/store";
+import { profileToText } from "@/lib/profile";
 import { DEFAULT_SLOTS, MEAL_STATUSES, MEAL_TYPES, WEEKDAYS } from "@/lib/types";
 import type { MealEntry, Recipe } from "@/lib/types";
 import { shortDate, weekDates } from "@/lib/week";
@@ -44,6 +51,7 @@ function Ruokalista() {
   const { data: plan = [] } = usePlan();
   const { setSlot, addSlot, deleteSlot, ensureWeek } = usePlanActions();
   const { addRecipes } = useShoppingActions();
+  const { data: taste } = useTasteProfile();
   const [wish, setWish] = useState("");
   const [generating, setGenerating] = useState(false);
 
@@ -83,6 +91,7 @@ function Ruokalista() {
         data: {
           recipes: recipes.map((r) => ({ id: r.id, title: r.title, tags: r.tags })),
           wish: wish.trim() || undefined,
+          profile: profileToText(taste),
         },
       });
       for (const item of result) {

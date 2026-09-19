@@ -12,7 +12,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { assistantChat, chatEditRecipe } from "@/lib/ai.functions";
-import { useSaveRecipe } from "@/lib/store";
+import { useSaveRecipe, useTasteProfile } from "@/lib/store";
+import { profileToText } from "@/lib/profile";
 import type { Ingredient, Recipe } from "@/lib/types";
 import { formatQuantity } from "@/lib/categorize";
 import { toast } from "sonner";
@@ -108,6 +109,7 @@ function AssistantSheet({
   const [busy, setBusy] = useState(false);
   const [updated, setUpdated] = useState<EditableRecipe | null>(null);
   const save = useSaveRecipe();
+  const { data: taste } = useTasteProfile();
 
   useEffect(() => {
     if (open) {
@@ -163,6 +165,7 @@ function AssistantSheet({
             context_label: ctx?.label ?? "Rullaa",
             context_data: JSON.stringify(ctx?.data ?? {}).slice(0, 12000),
             messages: next,
+            ...(profileToText(taste) ? { profile: profileToText(taste)! } : {}),
           },
         });
         setMessages([...next, { role: "assistant", content: res.reply }]);
