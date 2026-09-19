@@ -146,6 +146,39 @@ function Tili() {
           )}
         </div>
       )}
+
+      <div className="card-soft mt-4 space-y-3 px-4 py-4">
+        <div>
+          <p className="font-display text-xl">Makuprofiili</p>
+          <p className="text-sm text-muted-foreground">
+            AI-apuri ehdottaa reseptejä ja viikon ruokalistan makusi mukaan.
+          </p>
+        </div>
+
+        {profile?.summary && <p className="text-sm">{profile.summary}</p>}
+
+        {profile?.tags?.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {profile.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Et ole vielä täyttänyt makuprofiilia.</p>
+        )}
+
+        <Button className="w-full" variant="outline" onClick={() => setProfileOpen(true)}>
+          <Sparkles className="mr-2 h-4 w-4" />
+          {profile ? "Muokkaa makuprofiilia" : "Luo makuprofiili"}
+        </Button>
+      </div>
+
+      <TasteProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </AppShell>
   );
 }
