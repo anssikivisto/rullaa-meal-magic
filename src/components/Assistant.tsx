@@ -165,6 +165,7 @@ function AssistantSheet({
             context_label: ctx?.label ?? "Rullaa",
             context_data: JSON.stringify(ctx?.data ?? {}).slice(0, 12000),
             messages: next,
+            ...(profileToText(taste) ? { profile: profileToText(taste)! } : {}),
           },
         });
         setMessages([...next, { role: "assistant", content: res.reply }]);

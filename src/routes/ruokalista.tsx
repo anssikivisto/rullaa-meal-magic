@@ -12,7 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { usePlan, usePlanActions, useRecipes, useShoppingActions } from "@/lib/store";
+import {
+  usePlan,
+  usePlanActions,
+  useRecipes,
+  useShoppingActions,
+  useTasteProfile,
+} from "@/lib/store";
+import { profileToText } from "@/lib/profile";
 import { DEFAULT_SLOTS, MEAL_STATUSES, MEAL_TYPES, WEEKDAYS } from "@/lib/types";
 import type { MealEntry, Recipe } from "@/lib/types";
 import { shortDate, weekDates } from "@/lib/week";
