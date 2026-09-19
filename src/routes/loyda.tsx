@@ -1,14 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ExternalLink, Loader2, Search, Sparkles } from "lucide-react";
+import { ExternalLink, Heart, Loader2, Search, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAssistantContext } from "@/components/Assistant";
+import { TasteProfileDialog } from "@/components/TasteProfileDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { generateRecipe, parseRecipeUrl, searchWebRecipes, type WebResult } from "@/lib/ai.functions";
-import { useSaveRecipe } from "@/lib/store";
+import {
+  generateRecipe,
+  parseRecipeUrl,
+  searchWebRecipes,
+  suggestRecipeIdeas,
+  type RecipeIdea,
+  type WebResult,
+} from "@/lib/ai.functions";
+import { useRecipes, useSaveRecipe, useTasteProfile } from "@/lib/store";
+import { profileToText } from "@/lib/profile";
 import { formatQuantity } from "@/lib/categorize";
 import type { Ingredient } from "@/lib/types";
 import { toast } from "sonner";
