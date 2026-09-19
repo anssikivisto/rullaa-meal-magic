@@ -51,6 +51,7 @@ function Ruokalista() {
   const { data: plan = [] } = usePlan();
   const { setSlot, addSlot, deleteSlot, ensureWeek } = usePlanActions();
   const { addRecipes } = useShoppingActions();
+  const { data: taste } = useTasteProfile();
   const [wish, setWish] = useState("");
   const [generating, setGenerating] = useState(false);
 
