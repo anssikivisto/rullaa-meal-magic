@@ -109,6 +109,7 @@ function AssistantSheet({
   const [busy, setBusy] = useState(false);
   const [updated, setUpdated] = useState<EditableRecipe | null>(null);
   const save = useSaveRecipe();
+  const { data: taste } = useTasteProfile();
 
   useEffect(() => {
     if (open) {
