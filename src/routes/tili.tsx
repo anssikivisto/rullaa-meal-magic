@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Loader2, LogOut, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, LogOut, Mail, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { TasteProfileDialog } from "@/components/TasteProfileDialog";
+import { useTasteProfile } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
