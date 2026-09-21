@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3.8-flash";
+const GATEWAY = "https://api.openai.com/v1/chat/completions";
+const MODEL = "gpt-4o-mini";
 
 type ParsedRecipe = {
   title: string;
@@ -39,8 +39,8 @@ const recipeSchema = {
 };
 
 async function callGateway(body: Record<string, unknown>) {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("AI ei ole käytettävissä.");
+  const key = process.env["OPENAI_API_KEY"];
+  if (!key) throw new Error("AI ei ole käytettävissä. (API-avain puuttuu)");
   const res = await fetch(GATEWAY, {
     method: "POST",
     headers: {
@@ -52,7 +52,7 @@ async function callGateway(body: Record<string, unknown>) {
   if (!res.ok) {
     const text = await res.text();
     if (res.status === 429) throw new Error("Liikaa pyyntöjä juuri nyt. Yritä hetken kuluttua.");
-    if (res.status === 402) throw new Error("AI-krediitit ovat lopussa. Lisää krediittejä työtilaan.");
+    if (res.status === 402) throw new Error("AI-saldo on lopussa.");
     throw new Error(`AI-virhe (${res.status}): ${text.slice(0, 200)}`);
   }
   const json = (await res.json()) as {
@@ -145,7 +145,6 @@ const FRACTIONS: Record<string, number> = {
 
 export function splitIngredient(line: string) {
   let cleaned = line.replace(/\s+/g, " ").trim();
-  // leading quantity: "1 1/2", "1½", "14", "2,5", "2-3"
   const qm = cleaned.match(
     /^((?:\d+(?:[.,]\d+)?)(?:\s*[-–/]\s*\d+(?:[.,]\d+)?)?\s*[½¼¾⅓⅔⅛]?|[½¼¾⅓⅔⅛])\s*/,
   );
@@ -170,7 +169,6 @@ export function splitIngredient(line: string) {
     }
   }
 
-  // leading unit word
   let unit: string | null = null;
   const um = cleaned.match(/^([a-zA-ZäöåÄÖÅ.]+)\b\.?\s*/);
   if (um) {
@@ -244,7 +242,7 @@ export const parseRecipeUrl = createServerFn({ method: "POST" })
     let html = "";
     try {
       const res = await fetch(data.url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; RullaaBot/1.0)" },
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; OivaBot/1.0)" },
       });
       if (!res.ok) throw new Error(String(res.status));
       html = await res.text();
@@ -283,7 +281,6 @@ export const parseRecipeUrl = createServerFn({ method: "POST" })
       }
     }
 
-    // Fallback: let AI read the page text
     const text = stripHtml(html).slice(0, 12000);
     const parsed = (await callGateway({
       messages: [
@@ -367,7 +364,7 @@ Käytä vain annettuja recipe_id -arvoja. Palauta JSON {"plan":[{"day":0,"recipe
         {
           role: "user",
           content: `Toive: ${data.wish || "ei erityistoivetta"}\nMakuprofiili: ${data.profile || "ei tiedossa"}\nReseptit:\n${data.recipes
-            .map((r) => `${r.id} | ${r.title} | ${r.tags.join(", ")}`)
+            .map((r) => `${r.id} | ${r.title} \vert{}${r.tags.join(", ")}`)
             .join("\n")}`,
         },
       ],
@@ -531,7 +528,7 @@ export const searchWebRecipes = createServerFn({ method: "POST" })
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Mozilla/5.0 (compatible; RullaaBot/1.0)",
+        "User-Agent": "Mozilla/5.0 (compatible; OivaBot/1.0)",
       },
       body: new URLSearchParams({ q: `${data.query} resepti` }).toString(),
     });
@@ -576,7 +573,7 @@ export const assistantChat = createServerFn({ method: "POST" })
       messages: [
         {
           role: "system",
-          content: `Olet Rullaa-sovelluksen suomenkielinen kokkiapuri. Vastaat lyhyesti ja käytännöllisesti suomeksi.
+          content: `Olet Oiva-sovelluksen suomenkielinen kokkiapuri. Vastaat lyhyesti ja käytännöllisesti suomeksi.
 Käytössäsi on käyttäjän nykyisen näkymän tiedot (${data.context_label}). Hyödynnä niitä vastauksissasi.
 ${data.profile ? `Käyttäjän makuprofiili: ${data.profile}. Noudata sitä ehdotuksissasi.` : ""}
 Palauta JSON {"reply":"..."} jossa vastaus on selkeä ja korkeintaan muutama lause tai lyhyt lista.`,
