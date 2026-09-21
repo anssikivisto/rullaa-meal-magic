@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Rullaa design system — warm, minimal, kitchen-friendly.
- * All colors are oklch semantic tokens. Never hardcode colors in components.
+ * Oiva design system — warm, cozy, approachable.
+ * All colors are oklch semantic tokens.
  */
 
 @theme inline {
@@ -46,67 +46,78 @@
   --color-tag-time-foreground: var(--tag-time-foreground);
   --color-tag-occasion: var(--tag-occasion);
   --color-tag-occasion-foreground: var(--tag-occasion-foreground);
-  --shadow-soft: 0 1px 2px oklch(0.35 0.04 60 / 0.06), 0 8px 24px oklch(0.35 0.04 60 / 0.07);
-  --shadow-lift: 0 2px 6px oklch(0.35 0.04 60 / 0.08), 0 16px 40px oklch(0.35 0.04 60 / 0.1);
+  --shadow-soft: 0 2px 4px oklch(0.35 0.04 60 / 0.04), 0 8px 16px oklch(0.35 0.04 60 / 0.05);
+  --shadow-lift: 0 4px 8px oklch(0.35 0.04 60 / 0.06), 0 16px 32px oklch(0.35 0.04 60 / 0.08);
 }
 
 :root {
-  --radius: 1rem;
-  --background: oklch(0.975 0.012 85);
-  --foreground: oklch(0.26 0.03 55);
-  --card: oklch(0.995 0.006 90);
-  --card-foreground: oklch(0.26 0.03 55);
-  --popover: oklch(0.995 0.006 90);
-  --popover-foreground: oklch(0.26 0.03 55);
-  --primary: oklch(0.52 0.093 148);
-  --primary-foreground: oklch(0.98 0.01 90);
-  --secondary: oklch(0.93 0.026 82);
-  --secondary-foreground: oklch(0.3 0.035 60);
-  --muted: oklch(0.94 0.018 85);
-  --muted-foreground: oklch(0.52 0.026 62);
-  --accent: oklch(0.79 0.13 62);
-  --accent-foreground: oklch(0.26 0.05 50);
-  --destructive: oklch(0.55 0.19 27);
-  --destructive-foreground: oklch(0.98 0.01 90);
-  --border: oklch(0.89 0.018 82);
-  --input: oklch(0.89 0.018 82);
-  --ring: oklch(0.52 0.093 148);
-  --surface: oklch(0.955 0.017 85);
+  --radius: 1.5rem; /* Increased for softer, cozier UI shapes */
+  
+  /* Backgrounds: Soft cream / off-white instead of stark white */
+  --background: oklch(0.985 0.005 85); 
+  --foreground: oklch(0.28 0.03 45); /* Warmer, softer dark text */
+  --card: oklch(0.995 0.002 90);
+  --card-foreground: oklch(0.28 0.03 45);
+  --popover: oklch(0.995 0.002 90);
+  --popover-foreground: oklch(0.28 0.03 45);
+  
+  /* Accents: Warm sage green & terracotta */
+  --primary: oklch(0.55 0.1 150); /* Warm Sage Green */
+  --primary-foreground: oklch(0.99 0.01 150);
+  --secondary: oklch(0.93 0.03 75); /* Soft beige */
+  --secondary-foreground: oklch(0.35 0.04 60);
+  --muted: oklch(0.95 0.02 85);
+  --muted-foreground: oklch(0.55 0.03 62);
+  --accent: oklch(0.68 0.14 45); /* Terracotta */
+  --accent-foreground: oklch(0.99 0.02 45);
+  
+  --destructive: oklch(0.6 0.18 25);
+  --destructive-foreground: oklch(0.99 0.01 25);
+  --border: oklch(0.9 0.02 85);
+  --input: oklch(0.92 0.02 85);
+  --ring: oklch(0.55 0.1 150); /* Focus ring matches sage green */
+  --surface: oklch(0.96 0.015 85);
+  
+  /* Tags (Slightly warmer pastels) */
   --tag-diet: oklch(0.9 0.06 150);
   --tag-diet-foreground: oklch(0.37 0.08 150);
   --tag-time: oklch(0.92 0.07 75);
   --tag-time-foreground: oklch(0.42 0.09 60);
-  --tag-occasion: oklch(0.91 0.05 20);
-  --tag-occasion-foreground: oklch(0.42 0.11 22);
+  --tag-occasion: oklch(0.91 0.05 30); /* Moved slightly towards warm orange/red */
+  --tag-occasion-foreground: oklch(0.42 0.11 30);
 }
 
 .dark {
-  --background: oklch(0.21 0.018 60);
-  --foreground: oklch(0.95 0.012 85);
-  --card: oklch(0.25 0.02 60);
-  --card-foreground: oklch(0.95 0.012 85);
-  --popover: oklch(0.25 0.02 60);
-  --popover-foreground: oklch(0.95 0.012 85);
-  --primary: oklch(0.68 0.11 148);
-  --primary-foreground: oklch(0.2 0.03 60);
-  --secondary: oklch(0.3 0.02 60);
-  --secondary-foreground: oklch(0.95 0.012 85);
-  --muted: oklch(0.3 0.02 60);
-  --muted-foreground: oklch(0.72 0.02 70);
-  --accent: oklch(0.72 0.12 62);
-  --accent-foreground: oklch(0.2 0.03 60);
-  --destructive: oklch(0.62 0.18 27);
-  --destructive-foreground: oklch(0.98 0.01 90);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.68 0.11 148);
-  --surface: oklch(0.24 0.02 60);
-  --tag-diet: oklch(0.35 0.06 150);
+  /* Dark mode: Warmer, less stark black, leaning towards deep olive/brown tones */
+  --background: oklch(0.25 0.015 60);
+  --foreground: oklch(0.96 0.01 85);
+  --card: oklch(0.28 0.015 60);
+  --card-foreground: oklch(0.96 0.01 85);
+  --popover: oklch(0.28 0.015 60);
+  --popover-foreground: oklch(0.96 0.01 85);
+  
+  --primary: oklch(0.65 0.11 150); /* Lighter Sage Green for dark mode */
+  --primary-foreground: oklch(0.2 0.03 150);
+  --secondary: oklch(0.32 0.02 65);
+  --secondary-foreground: oklch(0.96 0.01 85);
+  --muted: oklch(0.32 0.02 65);
+  --muted-foreground: oklch(0.75 0.02 70);
+  --accent: oklch(0.72 0.14 45); /* Brightened Terracotta */
+  --accent-foreground: oklch(0.2 0.04 45);
+  
+  --destructive: oklch(0.65 0.18 25);
+  --destructive-foreground: oklch(0.98 0.01 25);
+  --border: oklch(1 0 0 / 15%);
+  --input: oklch(1 0 0 / 20%);
+  --ring: oklch(0.65 0.11 150);
+  --surface: oklch(0.27 0.015 60);
+  
+  --tag-diet: oklch(0.38 0.06 150);
   --tag-diet-foreground: oklch(0.88 0.07 150);
-  --tag-time: oklch(0.36 0.06 70);
+  --tag-time: oklch(0.38 0.06 70);
   --tag-time-foreground: oklch(0.9 0.08 75);
-  --tag-occasion: oklch(0.36 0.06 22);
-  --tag-occasion-foreground: oklch(0.9 0.07 22);
+  --tag-occasion: oklch(0.38 0.06 30);
+  --tag-occasion-foreground: oklch(0.9 0.07 30);
 }
 
 @layer base {

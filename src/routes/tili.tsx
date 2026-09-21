@@ -16,12 +16,12 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/tili")({
   head: () => ({
     meta: [
-      { title: "Tili – Rullaa" },
+      { title: "Tili – Oiva" },
       {
         name: "description",
-        content: "Kirjaudu Rullaan Googlella tai sähköpostilla ja siirrä vieraskäytön reseptit.",
+        content: "Kirjaudu Oivaan Googlella tai sähköpostilla ja siirrä vieraskäytön reseptit.",
       },
-      { property: "og:title", content: "Tili – Rullaa" },
+      { property: "og:title", content: "Tili – Oiva" },
       { property: "og:description", content: "Kirjaudu sisään ja synkronoi reseptisi." },
     ],
   }),
@@ -42,8 +42,8 @@ function Tili() {
   useEffect(() => {
     if (profileLoading || asked || profile) return;
     if (typeof window === "undefined") return;
-    if (window.localStorage.getItem("rullaa.profile.asked")) return;
-    window.localStorage.setItem("rullaa.profile.asked", "1");
+    if (window.localStorage.getItem("oiva.profile.asked")) return;
+    window.localStorage.setItem("oiva.profile.asked", "1");
     setAsked(true);
     setProfileOpen(true);
   }, [profileLoading, profile, asked]);
@@ -89,23 +89,23 @@ function Tili() {
 
   return (
     <AppShell>
-      <h1 className="font-display text-3xl">Tili</h1>
+      <h1 className="font-display text-3xl text-stone-800">Tili</h1>
 
       {loading ? (
-        <p className="py-12 text-center text-sm text-muted-foreground">Ladataan…</p>
+        <p className="py-12 text-center text-sm text-stone-500">Ladataan…</p>
       ) : user ? (
-        <div className="card-soft mt-4 space-y-4 px-4 py-4">
+        <div className="bg-stone-50 rounded-2xl border border-stone-200/60 mt-4 space-y-4 px-5 py-5 shadow-sm">
           <div>
-            <p className="text-sm text-muted-foreground">Kirjautuneena</p>
-            <p className="font-display text-xl">{user.email ?? "Tili"}</p>
+            <p className="text-sm text-stone-500 mb-1">Kirjautuneena</p>
+            <p className="font-display text-xl text-stone-800">{user.email ?? "Tili"}</p>
           </div>
-          <Button variant="outline" className="w-full" onClick={() => void runMigrate()} disabled={migrating}>
+          <Button variant="outline" className="w-full rounded-2xl border-stone-300 text-stone-700 hover:bg-stone-100" onClick={() => void runMigrate()} disabled={migrating}>
             {migrating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Siirrä vieraskäytön tiedot tilille
           </Button>
           <Button
             variant="ghost"
-            className="w-full"
+            className="w-full rounded-2xl text-stone-500 hover:text-stone-800 hover:bg-stone-200/50"
             onClick={async () => {
               await supabase.auth.signOut();
               await qc.invalidateQueries();
@@ -116,63 +116,73 @@ function Tili() {
           </Button>
         </div>
       ) : (
-        <div className="card-soft mt-4 space-y-4 px-4 py-4">
-          <p className="text-sm text-muted-foreground">
-            Käytät Rullaa vieraana – reseptit tallentuvat vain tähän laitteeseen. Kirjaudu, niin
+        <div className="bg-stone-50 rounded-2xl border border-stone-200/60 mt-4 space-y-5 px-5 py-5 shadow-sm">
+          <p className="text-sm text-stone-600">
+            Käytät Oivaa vieraana – reseptit tallentuvat vain tähän laitteeseen. Kirjaudu, niin
             saat ne kaikkiin laitteisiisi.
           </p>
-          <Button className="w-full" onClick={() => void google()} disabled={busy}>
+          <Button className="w-full rounded-2xl bg-stone-800 hover:bg-stone-900 text-white" onClick={() => void google()} disabled={busy}>
             Jatka Googlella
           </Button>
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Sähköposti</Label>
+          
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-stone-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-stone-50 px-2 text-stone-500">tai</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-stone-700">Sähköposti</Label>
             <Input
               id="email"
               type="email"
               inputMode="email"
+              className="rounded-xl border-stone-200 bg-white focus-visible:ring-emerald-700"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="etunimi@esimerkki.fi"
             />
           </div>
-          <Button variant="outline" className="w-full" onClick={() => void magicLink()} disabled={busy}>
+          <Button variant="outline" className="w-full rounded-2xl border-stone-300 text-stone-700 hover:bg-white" onClick={() => void magicLink()} disabled={busy}>
             <Mail className="mr-2 h-4 w-4" /> Lähetä kirjautumislinkki
           </Button>
           {isGuest && (
-            <p className="text-xs text-muted-foreground">
-              Kirjautumisen jälkeen voit siirtää vieraskäytön reseptit tilillesi yhdellä
-              napautuksella.
+            <p className="text-xs text-stone-500 text-center px-2">
+              Kirjautumisen jälkeen voit siirtää vieraskäytön reseptit tilillesi yhdellä napautuksella.
             </p>
           )}
         </div>
       )}
 
-      <div className="card-soft mt-4 space-y-3 px-4 py-4">
+      <div className="bg-white rounded-2xl border border-stone-100 shadow-sm mt-5 space-y-4 px-5 py-5">
         <div>
-          <p className="font-display text-xl">Makuprofiili</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="font-display text-xl text-stone-800">Makuprofiili</p>
+          <p className="text-sm text-stone-500 mt-1">
             AI-apuri ehdottaa reseptejä ja viikon ruokalistan makusi mukaan.
           </p>
         </div>
 
-        {profile?.summary && <p className="text-sm">{profile.summary}</p>}
+        {profile?.summary && <p className="text-sm text-stone-700 leading-relaxed bg-stone-50 p-3 rounded-xl border border-stone-100">{profile.summary}</p>}
 
         {profile?.tags?.length ? (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-2 pt-1">
             {profile.tags.map((t) => (
               <span
                 key={t}
-                className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 border border-emerald-100/50"
               >
                 {t}
               </span>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">Et ole vielä täyttänyt makuprofiilia.</p>
+          <p className="text-sm text-stone-400 italic">Et ole vielä täyttänyt makuprofiilia.</p>
         )}
 
-        <Button className="w-full" variant="outline" onClick={() => setProfileOpen(true)}>
+        <Button className="w-full rounded-xl border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 mt-2" variant="outline" onClick={() => setProfileOpen(true)}>
           <Sparkles className="mr-2 h-4 w-4" />
           {profile ? "Muokkaa makuprofiilia" : "Luo makuprofiili"}
         </Button>
