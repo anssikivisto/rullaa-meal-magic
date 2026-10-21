@@ -5,20 +5,20 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Oiva design system — warm, cozy, approachable.
- * All colors are oklch semantic tokens.
+- Oiva design system — warm, cozy, approachable.
+- All colors are oklch semantic tokens.
  */
 
 @theme inline {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-xl: calc(var(--radius) + 8px);
+  --radius-2xl: calc(var(--radius) + 12px);
+  --radius-3xl: calc(var(--radius) + 16px);
+  --radius-4xl: calc(var(--radius) + 20px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -46,49 +46,50 @@
   --color-tag-time-foreground: var(--tag-time-foreground);
   --color-tag-occasion: var(--tag-occasion);
   --color-tag-occasion-foreground: var(--tag-occasion-foreground);
-  --shadow-soft: 0 2px 4px oklch(0.35 0.04 60 / 0.04), 0 8px 16px oklch(0.35 0.04 60 / 0.05);
-  --shadow-lift: 0 4px 8px oklch(0.35 0.04 60 / 0.06), 0 16px 32px oklch(0.35 0.04 60 / 0.08);
+  /* Pehmennetyt varjot Figma-mallin mukaiseksi */
+  --shadow-soft: 0 1px 3px oklch(0.35 0.04 60 / 0.02), 0 4px 12px oklch(0.35 0.04 60 / 0.04);
+  --shadow-lift: 0 4px 8px oklch(0.35 0.04 60 / 0.04), 0 12px 24px oklch(0.35 0.04 60 / 0.06);
 }
 
 :root {
-  --radius: 1.5rem; /* Increased for softer, cozier UI shapes */
+  --radius: 1.75rem; /* Erittäin pehmeät "pill"-muodot painikkeille ja korteille */
   
-  /* Backgrounds: Soft cream / off-white instead of stark white */
-  --background: oklch(0.985 0.005 85); 
-  --foreground: oklch(0.28 0.03 45); /* Warmer, softer dark text */
-  --card: oklch(0.995 0.002 90);
-  --card-foreground: oklch(0.28 0.03 45);
-  --popover: oklch(0.995 0.002 90);
-  --popover-foreground: oklch(0.28 0.03 45);
+  /* Backgrounds: Raikkaampi kermanvalkoinen paremman kontrastin vuoksi */
+  --background: oklch(0.99 0.003 85); 
+  --foreground: oklch(0.25 0.02 45); /* Syvempi ja selkeämpi teksti */
+  --card: oklch(0.998 0.001 90); /* Lähes puhdas valkoinen korteille */
+  --card-foreground: oklch(0.25 0.02 45);
+  --popover: oklch(0.998 0.001 90);
+  --popover-foreground: oklch(0.25 0.02 45);
   
-  /* Accents: Warm sage green & terracotta */
-  --primary: oklch(0.55 0.1 150); /* Warm Sage Green */
+  /* Accents: Warm sage green & terracotta (Päivitetty Figma-sävyihin) */
+  --primary: oklch(0.48 0.1 150); /* Tummempi salvianvihreä (parempi kontrasti) */
   --primary-foreground: oklch(0.99 0.01 150);
-  --secondary: oklch(0.93 0.03 75); /* Soft beige */
+  --secondary: oklch(0.94 0.02 75); /* Pehmeä beige tagien taustalle */
   --secondary-foreground: oklch(0.35 0.04 60);
-  --muted: oklch(0.95 0.02 85);
+  --muted: oklch(0.96 0.01 85);
   --muted-foreground: oklch(0.55 0.03 62);
-  --accent: oklch(0.68 0.14 45); /* Terracotta */
+  --accent: oklch(0.65 0.14 45); /* Syvä Terracotta */
   --accent-foreground: oklch(0.99 0.02 45);
   
   --destructive: oklch(0.6 0.18 25);
   --destructive-foreground: oklch(0.99 0.01 25);
-  --border: oklch(0.9 0.02 85);
-  --input: oklch(0.92 0.02 85);
-  --ring: oklch(0.55 0.1 150); /* Focus ring matches sage green */
-  --surface: oklch(0.96 0.015 85);
+  --border: oklch(0.93 0.01 85); /* Pehmennetty reuna */
+  --input: oklch(0.95 0.01 85);
+  --ring: oklch(0.48 0.1 150); /* Focus ring matches new sage green */
+  --surface: oklch(0.97 0.01 85);
   
-  /* Tags (Slightly warmer pastels) */
-  --tag-diet: oklch(0.9 0.06 150);
-  --tag-diet-foreground: oklch(0.37 0.08 150);
-  --tag-time: oklch(0.92 0.07 75);
-  --tag-time-foreground: oklch(0.42 0.09 60);
-  --tag-occasion: oklch(0.91 0.05 30); /* Moved slightly towards warm orange/red */
-  --tag-occasion-foreground: oklch(0.42 0.11 30);
+  /* Tags (Pehmeät pastellit Figma-tyyliin) */
+  --tag-diet: oklch(0.92 0.05 150);
+  --tag-diet-foreground: oklch(0.35 0.08 150);
+  --tag-time: oklch(0.94 0.05 75);
+  --tag-time-foreground: oklch(0.40 0.09 60);
+  --tag-occasion: oklch(0.92 0.05 30); 
+  --tag-occasion-foreground: oklch(0.40 0.11 30);
 }
 
 .dark {
-  /* Dark mode: Warmer, less stark black, leaning towards deep olive/brown tones */
+  /* Dark mode: Pidetty aiempi lämmin, oliiviin taittava tumma teema */
   --background: oklch(0.25 0.015 60);
   --foreground: oklch(0.96 0.01 85);
   --card: oklch(0.28 0.015 60);
@@ -96,13 +97,13 @@
   --popover: oklch(0.28 0.015 60);
   --popover-foreground: oklch(0.96 0.01 85);
   
-  --primary: oklch(0.65 0.11 150); /* Lighter Sage Green for dark mode */
+  --primary: oklch(0.65 0.11 150); 
   --primary-foreground: oklch(0.2 0.03 150);
   --secondary: oklch(0.32 0.02 65);
   --secondary-foreground: oklch(0.96 0.01 85);
   --muted: oklch(0.32 0.02 65);
   --muted-foreground: oklch(0.75 0.02 70);
-  --accent: oklch(0.72 0.14 45); /* Brightened Terracotta */
+  --accent: oklch(0.72 0.14 45); 
   --accent-foreground: oklch(0.2 0.04 45);
   
   --destructive: oklch(0.65 0.18 25);
@@ -142,12 +143,13 @@
     font-family: var(--font-display);
     font-optical-sizing: auto;
     letter-spacing: -0.01em;
+    font-weight: 600; /* Hiukan tuhdimpi otsikko Figma-tyyliin */
   }
 }
 
 @utility card-soft {
   background-color: var(--color-card);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-2xl); /* Erittäin pyöreät kortit */
   box-shadow: var(--shadow-soft);
   border: 1px solid var(--color-border);
 }
