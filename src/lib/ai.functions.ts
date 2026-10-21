@@ -79,7 +79,7 @@ instructions (selkeät vaiheet järjestyksessä, ilman numerointia).
 Kirjoita kaikki suomeksi. Älä keksi raaka-aineita joita tekstissä ei ole.`;
 
 export const parseRecipeText = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ text: z.string().min(5).max(20000) }).parse(input))
+  .validator((input: unknown) => z.object({ text: z.string().min(5).max(20000) }).parse(input))
   .handler(async ({ data }): Promise<ParsedRecipe> => {
     const parsed = (await callGateway({
       messages: [
@@ -237,7 +237,7 @@ function ogImage(html: string): string | null {
 }
 
 export const parseRecipeUrl = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ url: z.string().url() }).parse(input))
+  .validator((input: unknown) => z.object({ url: z.string().url() }).parse(input))
   .handler(async ({ data }): Promise<ParsedRecipe & { source_url: string }> => {
     let html = "";
     try {
@@ -298,7 +298,7 @@ export const parseRecipeUrl = createServerFn({ method: "POST" })
 /* -------- tag suggestions -------- */
 
 export const suggestTags = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         title: z.string(),
@@ -341,7 +341,7 @@ Palauta JSON muodossa {"tags": ["..."]}.`,
 /* -------- weekly plan -------- */
 
 export const generateWeekPlan = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         recipes: z
@@ -413,7 +413,7 @@ const recipeInputSchema = z.object({
 });
 
 export const translateRecipe = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ recipe: recipeInputSchema }).parse(input))
+  .validator((input: unknown) => z.object({ recipe: recipeInputSchema }).parse(input))
   .handler(async ({ data }): Promise<ParsedRecipe> => {
     const parsed = (await callGateway({
       messages: [
@@ -438,7 +438,7 @@ Palauta sama JSON-rakenne.`,
 /* -------- AI chat recipe editor -------- */
 
 export const chatEditRecipe = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         recipe: recipeInputSchema,
@@ -483,7 +483,7 @@ Anna muunnelmalle kuvaava otsikko jos ruokalaji muuttuu olennaisesti.`,
 /* -------- AI recipe generator -------- */
 
 export const generateRecipe = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z.object({ prompt: z.string().min(3).max(600) }).parse(input),
   )
   .handler(async ({ data }): Promise<ParsedRecipe> => {
@@ -522,7 +522,7 @@ function decodeEntities(s: string) {
 }
 
 export const searchWebRecipes = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ query: z.string().min(2).max(200) }).parse(input))
+  .validator((input: unknown) => z.object({ query: z.string().min(2).max(200) }).parse(input))
   .handler(async ({ data }): Promise<WebResult[]> => {
     const res = await fetch("https://html.duckduckgo.com/html/", {
       method: "POST",
@@ -555,7 +555,7 @@ export const searchWebRecipes = createServerFn({ method: "POST" })
 /* -------- general context-aware assistant -------- */
 
 export const assistantChat = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         context_label: z.string().max(60),
@@ -601,7 +601,7 @@ Palauta JSON {"reply":"..."} jossa vastaus on selkeä ja korkeintaan muutama lau
 /* -------- taste profile + personalised ideas -------- */
 
 export const buildTasteProfile = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         tags: z.array(z.string().max(60)).max(20),
@@ -670,7 +670,7 @@ export type RecipeIdea = {
 };
 
 export const suggestRecipeIdeas = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         profile: z.string().max(2000),
