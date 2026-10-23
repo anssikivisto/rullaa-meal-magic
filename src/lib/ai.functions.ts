@@ -574,7 +574,7 @@ export const assistantChat = createServerFn({ method: "POST" }).middleware([auth
       messages: [
         {
           role: "system",
-          content: `Olet Oiva-sovelluksen suomenkielinen kokkiapuri. Vastaat lyhyesti ja käytännöllisesti suomeksi.
+          content: `Olet Tilli-sovelluksen suomenkielinen kokkiapuri. Vastaat lyhyesti ja käytännöllisesti suomeksi.
 Käytössäsi on käyttäjän nykyisen näkymän tiedot (${data.context_label}). Hyödynnä niitä vastauksissasi.
 ${data.profile ? `Käyttäjän makuprofiili: ${data.profile}. Noudata sitä ehdotuksissasi.` : ""}
 Palauta JSON {"reply":"..."} jossa vastaus on selkeä ja korkeintaan muutama lause tai lyhyt lista.`,

@@ -255,7 +255,7 @@ function Loyda() {
               <span className="text-sm">
                 {profile?.summary
                   ? profile.summary
-                  : "Kerro makuprofiilissa millaista ruokaa syöt, niin Oiva keksii sinulle osuvimmat ehdotukset."}
+                  : "Kerro makuprofiilissa millaista ruokaa syöt, niin Tilli keksii sinulle osuvimmat ehdotukset."}
               </span>
             </p>
             <Button variant="outline" className="w-full rounded-2xl border-stone-300 text-stone-700 hover:bg-stone-100" onClick={() => setProfileOpen(true)}>

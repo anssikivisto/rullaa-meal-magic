@@ -118,7 +118,7 @@ function Tili() {
       ) : (
         <div className="bg-stone-50 rounded-2xl border border-stone-200/60 mt-4 space-y-5 px-5 py-5 shadow-sm">
           <p className="text-sm text-stone-600">
-            Käytät Oivaa vieraana – reseptit tallentuvat vain tähän laitteeseen. Kirjaudu, niin
+            Käytät Tilliä vieraana – reseptit tallentuvat vain tähän laitteeseen. Kirjaudu, niin
             saat ne kaikkiin laitteisiisi.
           </p>
           <Button className="w-full rounded-2xl bg-stone-800 hover:bg-stone-900 text-white" onClick={() => void google()} disabled={busy}>
