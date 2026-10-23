@@ -25,12 +25,12 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/loyda")({
   head: () => ({
     meta: [
-      { title: "Löydä uutta – Oiva" },
+      { title: "Löydä uutta – Tilli" },
       {
         name: "description",
-        content: "Hae reseptejä verkosta tai anna Oivan keksiä uusi resepti raaka-aineistasi.",
+        content: "Hae reseptejä verkosta tai anna Tillin keksiä uusi resepti raaka-aineistasi.",
       },
-      { property: "og:title", content: "Löydä uutta – Oiva" },
+      { property: "og:title", content: "Löydä uutta – Tilli" },
       { property: "og:description", content: "Verkkohaku ja AI-reseptiapuri yhdessä näkymässä." },
     ],
   }),
@@ -149,7 +149,7 @@ function Loyda() {
         notes: null,
       });
       setIdeas((list) => list.filter((i) => i.title !== idea.title));
-      toast.success("Tallennettu Oivaan!");
+      toast.success("Tallennettu Tilliin!");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Tallennus epäonnistui.");
     } finally {
@@ -190,7 +190,7 @@ function Loyda() {
         tags: [],
         notes: null,
       });
-      toast.success("Tallennettu Oivaan!");
+      toast.success("Tallennettu Tilliin!");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Reseptin tallennus epäonnistui.");
     } finally {
@@ -231,7 +231,7 @@ function Loyda() {
       tags: [],
       notes: null,
     });
-    toast.success("Tallennettu Oivaan!");
+    toast.success("Tallennettu Tilliin!");
     setGenerated(null);
     setPrompt("");
   }
@@ -268,7 +268,7 @@ function Loyda() {
               ) : (
                 <Sparkles className="mr-2 h-4 w-4" />
               )}
-              Oiva, ehdota minulle reseptejä
+              Tilli, ehdota minulle reseptejä
             </Button>
           </div>
 
@@ -341,7 +341,7 @@ function Loyda() {
                     onClick={() => void saveIdeaRecipe(idea)}
                     disabled={ideaBusy === idea.title}
                   >
-                    Tallenna Oivaan
+                    Tallenna Tilliin
                   </Button>
                 </div>
               </li>
@@ -351,7 +351,7 @@ function Loyda() {
           {ideas.length === 0 && !ideasBusy && (
             <div className="py-8 text-center space-y-2">
               <p className="text-stone-500 text-sm">
-                Oiva pitää huolen, ettei ehdotuksissa toisteta jo tallentamiasi reseptejä. Etsi rohkeasti uusia makuja!
+                Tilli pitää huolen, ettei ehdotuksissa toisteta jo tallentamiasi reseptejä. Etsi rohkeasti uusia makuja!
               </p>
             </div>
           )}
@@ -385,9 +385,9 @@ function Loyda() {
 
           {results.length === 0 && !searching && (
             <div className="py-10 text-center space-y-2 bg-stone-50 rounded-2xl border border-stone-100 mt-6">
-              <p className="text-stone-700 font-medium">Oivan vinkki 💡</p>
+              <p className="text-stone-700 font-medium">Tillin vinkki 💡</p>
               <p className="text-sm text-stone-500 px-6">
-                Löysitkö kivan reseptin netistä? Hae sitä täältä ja tallenna se suoraan Oivaan, niin se on mukana ensi viikon ruokalistalla!
+                Löysitkö kivan reseptin netistä? Hae sitä täältä ja tallenna se suoraan Tilliin, niin se on mukana ensi viikon ruokalistalla!
               </p>
             </div>
           )}
@@ -412,7 +412,7 @@ function Loyda() {
                     disabled={savingUrl === r.url}
                   >
                     {savingUrl === r.url && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-                    Tallenna Oivaan
+                    Tallenna Tilliin
                   </Button>
                 </div>
               </li>
@@ -467,7 +467,7 @@ function Loyda() {
                 ))}
               </ol>
               <Button className="w-full rounded-xl bg-stone-800 hover:bg-stone-900 text-white mt-4" onClick={() => void saveGenerated()} disabled={save.isPending}>
-                Tallenna Oivaan
+                Tallenna Tilliin
               </Button>
             </div>
           )}

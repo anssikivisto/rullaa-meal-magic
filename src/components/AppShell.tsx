@@ -21,7 +21,7 @@ export function AppShell({ children, action }: { children: ReactNode; action?: R
           <div className="flex items-center justify-between px-4 py-3">
             <Link to="/" className="flex items-center gap-2">
               <RullaaLogo className="h-8 w-8 text-primary" />
-              <span className="font-display text-2xl font-semibold tracking-tight text-foreground">Oiva</span>
+              <span className="font-display text-2xl font-semibold tracking-tight text-foreground">Tilli</span>
             </Link>
             {action}
           </div>

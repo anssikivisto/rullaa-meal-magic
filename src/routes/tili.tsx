@@ -16,12 +16,12 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/tili")({
   head: () => ({
     meta: [
-      { title: "Tili – Oiva" },
+      { title: "Tili – Tilli" },
       {
         name: "description",
-        content: "Kirjaudu Oivaan Googlella tai sähköpostilla ja siirrä vieraskäytön reseptit.",
+        content: "Kirjaudu Tilliin Googlella tai sähköpostilla ja siirrä vieraskäytön reseptit.",
       },
-      { property: "og:title", content: "Tili – Oiva" },
+      { property: "og:title", content: "Tili – Tilli" },
       { property: "og:description", content: "Kirjaudu sisään ja synkronoi reseptisi." },
     ],
   }),
