@@ -1,0 +1,23 @@
+name: Keep Supabase alive
+
+on:
+  schedule:
+    - cron: "0 8 */3 * *"   # joka kolmas päivä klo 8 UTC
+  workflow_dispatch:         # mahdollistaa käsin ajon
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call keepalive function
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/keepalive" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          echo "HTTP $status"
+          [ "$status" = "200" ]
