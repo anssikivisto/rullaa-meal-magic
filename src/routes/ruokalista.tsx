@@ -29,12 +29,12 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/ruokalista")({
   head: () => ({
     meta: [
-      { title: "Viikon ruokalista – Rullaa" },
+      { title: "Viikon ruokalista – Tilli" },
       {
         name: "description",
         content: "Suunnittele viikon ateriat aterioittain ja anna AI:n ehdottaa koko viikko.",
       },
-      { property: "og:title", content: "Viikon ruokalista – Rullaa" },
+      { property: "og:title", content: "Viikon ruokalista – Tilli" },
       { property: "og:description", content: "Suunnittele viikon ateriat helposti." },
     ],
   }),

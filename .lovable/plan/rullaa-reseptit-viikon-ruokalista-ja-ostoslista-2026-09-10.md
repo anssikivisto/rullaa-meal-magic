@@ -1,10 +1,10 @@
-# Rullaa — reseptit, viikon ruokalista ja ostoslista
+# Tilli — reseptit, viikon ruokalista ja ostoslista
 
 A Finnish-language, mobile-first meal planning app. Bottom tabs: Reseptit, Ruokalista, Ostoslista, Tili.
 
 ## Scope of the first build
 
-1. **Design + shell** — warm minimalist look (soft cream background, herb-green accent, rounded cards), Rullaa logo mark in the top bar, bottom tab bar, installable on a phone home screen.
+1. **Design + shell** — warm minimalist look (soft cream background, herb-green accent, rounded cards), Tilli logo mark in the top bar, bottom tab bar, installable on a phone home screen.
 2. **Recipes** — list with search and tag filters, recipe detail with serving scaler (2/4/6...) and Cook Mode (large text, screen stays awake).
 3. **Import** — modal with two tabs: paste a web address, or paste an Instagram/TikTok caption. Both produce an editable preview form before saving. Plus a manual recipe builder.
 4. **AI tags** — on save, 3–5 Finnish tags suggested automatically (#arki, #kasvis, #alle-20min...), user can accept/remove.

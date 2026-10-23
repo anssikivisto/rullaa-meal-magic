@@ -14,9 +14,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/resepti/$id")({
   head: () => ({
     meta: [
-      { title: "Resepti – Rullaa" },
+      { title: "Resepti – Tilli" },
       { name: "description", content: "Katso resepti, skaalaa annokset ja siirry kokkaustilaan." },
-      { property: "og:title", content: "Resepti – Rullaa" },
+      { property: "og:title", content: "Resepti – Tilli" },
       { property: "og:description", content: "Resepti, annosskaalaus ja kokkaustila." },
     ],
   }),

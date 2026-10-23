@@ -19,7 +19,7 @@ AI-apuri oppii tuntemaan käyttäjän maun ja ehdottaa hänelle uusia reseptejä
 
 - Uusi välilehti "Sinulle" nykyisten "Hae verkosta" ja "AI-Reseptiapuri" rinnalle.
 - Painike "Ehdota minulle reseptejä" luo profiilin pohjalta 6–8 ehdotusta: nimi, lyhyt kuvaus, aika, annokset ja miksi tämä sopii sinulle.
-- Jokaisessa ehdotuksessa: "Näytä resepti" (AI kirjoittaa täyden reseptin) ja "Tallenna Rullaan".
+- Jokaisessa ehdotuksessa: "Näytä resepti" (AI kirjoittaa täyden reseptin) ja "Tallenna Tilliin".
 - Ehdotukset eivät toista reseptejä, jotka jo ovat kirjastossa.
 - Mahdollisuus tarkentaa: "lisää kasvisruokia", "nopeampia", "uusi haku".
 

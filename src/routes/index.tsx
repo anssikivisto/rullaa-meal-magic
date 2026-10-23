@@ -13,13 +13,13 @@ import type { Recipe } from "@/lib/types";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Rullaa – reseptit, ruokalista ja ostoslista" },
+      { title: "Tilli – reseptit, ruokalista ja ostoslista" },
       {
         name: "description",
         content:
-          "Rullaa kokoaa reseptisi, suunnittelee viikon ruokalistan ja tekee ostoslistan automaattisesti.",
+          "Tilli kokoaa reseptisi, suunnittelee viikon ruokalistan ja tekee ostoslistan automaattisesti.",
       },
-      { property: "og:title", content: "Rullaa – arjen ruokasuunnittelu" },
+      { property: "og:title", content: "Tilli – arjen ruokasuunnittelu" },
       {
         property: "og:description",
         content: "Tallenna reseptit, suunnittele viikko ja saa valmis ostoslista.",
@@ -94,7 +94,7 @@ function Reseptit() {
           <UtensilsCrossed className="h-8 w-8 text-muted-foreground" />
           <p className="font-display text-xl">Ei vielä reseptejä</p>
           <p className="max-w-xs text-sm text-muted-foreground">
-            Liitä linkki reseptisivulle tai Instagram-kuvaus – Rullaa poimii ainekset ja vaiheet
+            Liitä linkki reseptisivulle tai Instagram-kuvaus – Tilli poimii ainekset ja vaiheet
             puolestasi.
           </p>
           <Button onClick={() => setImportOpen(true)}>Lisää ensimmäinen resepti</Button>

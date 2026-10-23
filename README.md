@@ -1,14 +1,14 @@
-# Rullaa: Effortless Meal Planning
+# Tilli: Effortless Meal Planning
 
 Create a new project with Supabase enabled.
 
-Build a modern, mobile-first Progressive Web App (PWA) called "Rullaa" (in Finnish UI language).
+Build a modern, mobile-first Progressive Web App (PWA) called "Tilli" (in Finnish UI language).
 
 
 
 ### CORE PURPOSE
 
-"Rullaa" is a minimalist, all-in-one meal planning and grocery shopping assistant designed to make everyday home cooking effortlessly smooth.
+"Tilli" is a minimalist, all-in-one meal planning and grocery shopping assistant designed to make everyday home cooking effortlessly smooth.
 
 
 
@@ -118,9 +118,9 @@ Key Capabilities:
 
 ### 5. UI/UX DESIGN & MOBILE OPTIMIZATION
 
-- Clean, warm, minimalist UI named **Rullaa**.
+- Clean, warm, minimalist UI named **Tilli**.
 
-- Display a subtle icon next to "Rullaa" in the top bar.
+- Display a subtle icon next to "Tilli" in the top bar.
 
 - Tabbed bottom navigation for mobile: [Reseptit] | [Ruokalista] | [Ostoslista] | [Tili].
 

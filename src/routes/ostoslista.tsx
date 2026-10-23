@@ -13,12 +13,12 @@ import { CATEGORIES } from "@/lib/types";
 export const Route = createFileRoute("/ostoslista")({
   head: () => ({
     meta: [
-      { title: "Ostoslista – Rullaa" },
+      { title: "Ostoslista – Tilli" },
       {
         name: "description",
         content: "Ostoslista ryhmiteltynä kaupan osastojen mukaan, toimii myös offline-tilassa.",
       },
-      { property: "og:title", content: "Ostoslista – Rullaa" },
+      { property: "og:title", content: "Ostoslista – Tilli" },
       { property: "og:description", content: "Kaikki viikon ostokset yhdessä listassa." },
     ],
   }),

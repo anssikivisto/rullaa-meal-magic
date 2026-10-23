@@ -162,7 +162,7 @@ function AssistantSheet({
       } else {
         const res = await assistantChat({
           data: {
-            context_label: ctx?.label ?? "Rullaa",
+            context_label: ctx?.label ?? "Tilli",
             context_data: JSON.stringify(ctx?.data ?? {}).slice(0, 12000),
             messages: next,
             ...(profileToText(taste) ? { profile: profileToText(taste)! } : {}),
