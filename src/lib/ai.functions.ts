@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { authMiddleware } from "./auth-middleware";
 
 const GATEWAY = "https://api.openai.com/v1/chat/completions";
 const MODEL = "gpt-4o-mini";
@@ -78,7 +79,7 @@ ja name-kentässä ei saa olla määrää eikä yksikköä (esim. "14 oz firm to
 instructions (selkeät vaiheet järjestyksessä, ilman numerointia).
 Kirjoita kaikki suomeksi. Älä keksi raaka-aineita joita tekstissä ei ole.`;
 
-export const parseRecipeText = createServerFn({ method: "POST" })
+export const parseRecipeText = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) => z.object({ text: z.string().min(5).max(20000) }).parse(input))
   .handler(async ({ data }): Promise<ParsedRecipe> => {
     const parsed = (await callGateway({
@@ -236,7 +237,7 @@ function ogImage(html: string): string | null {
   return m?.[1] ?? null;
 }
 
-export const parseRecipeUrl = createServerFn({ method: "POST" })
+export const parseRecipeUrl = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) => z.object({ url: z.string().url() }).parse(input))
   .handler(async ({ data }): Promise<ParsedRecipe & { source_url: string }> => {
     let html = "";
@@ -297,7 +298,7 @@ export const parseRecipeUrl = createServerFn({ method: "POST" })
 
 /* -------- tag suggestions -------- */
 
-export const suggestTags = createServerFn({ method: "POST" })
+export const suggestTags = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -340,7 +341,7 @@ Palauta JSON muodossa {"tags": ["..."]}.`,
 
 /* -------- weekly plan -------- */
 
-export const generateWeekPlan = createServerFn({ method: "POST" })
+export const generateWeekPlan = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -364,7 +365,7 @@ Käytä vain annettuja recipe_id -arvoja. Palauta JSON {"plan":[{"day":0,"recipe
         {
           role: "user",
           content: `Toive: ${data.wish || "ei erityistoivetta"}\nMakuprofiili: ${data.profile || "ei tiedossa"}\nReseptit:\n${data.recipes
-            .map((r) => `${r.id} | ${r.title} \vert{}${r.tags.join(", ")}`)
+            .map((r) => `${r.id} | ${r.title} |${r.tags.join(", ")}`)
             .join("\n")}`,
         },
       ],
@@ -412,7 +413,7 @@ const recipeInputSchema = z.object({
   instructions: z.array(z.string()),
 });
 
-export const translateRecipe = createServerFn({ method: "POST" })
+export const translateRecipe = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) => z.object({ recipe: recipeInputSchema }).parse(input))
   .handler(async ({ data }): Promise<ParsedRecipe> => {
     const parsed = (await callGateway({
@@ -437,7 +438,7 @@ Palauta sama JSON-rakenne.`,
 
 /* -------- AI chat recipe editor -------- */
 
-export const chatEditRecipe = createServerFn({ method: "POST" })
+export const chatEditRecipe = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -482,7 +483,7 @@ Anna muunnelmalle kuvaava otsikko jos ruokalaji muuttuu olennaisesti.`,
 
 /* -------- AI recipe generator -------- */
 
-export const generateRecipe = createServerFn({ method: "POST" })
+export const generateRecipe = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) =>
     z.object({ prompt: z.string().min(3).max(600) }).parse(input),
   )
@@ -521,7 +522,7 @@ function decodeEntities(s: string) {
     .trim();
 }
 
-export const searchWebRecipes = createServerFn({ method: "POST" })
+export const searchWebRecipes = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) => z.object({ query: z.string().min(2).max(200) }).parse(input))
   .handler(async ({ data }): Promise<WebResult[]> => {
     const res = await fetch("https://html.duckduckgo.com/html/", {
@@ -554,7 +555,7 @@ export const searchWebRecipes = createServerFn({ method: "POST" })
 
 /* -------- general context-aware assistant -------- */
 
-export const assistantChat = createServerFn({ method: "POST" })
+export const assistantChat = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -600,7 +601,7 @@ Palauta JSON {"reply":"..."} jossa vastaus on selkeä ja korkeintaan muutama lau
 
 /* -------- taste profile + personalised ideas -------- */
 
-export const buildTasteProfile = createServerFn({ method: "POST" })
+export const buildTasteProfile = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) =>
     z
       .object({
@@ -669,7 +670,7 @@ export type RecipeIdea = {
   tags: string[];
 };
 
-export const suggestRecipeIdeas = createServerFn({ method: "POST" })
+export const suggestRecipeIdeas = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) =>
     z
       .object({
