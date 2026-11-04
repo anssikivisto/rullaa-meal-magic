@@ -88,6 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "Tallenna reseptit, suunnittele viikko ja saa valmis ostoslista.",
       },
       { property: "og:type", content: "website" },
+      { name: "theme-color", content: "##3d7a56" },
     ],
     links: [
       {
