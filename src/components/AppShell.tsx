@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { BookOpen, CalendarDays, Compass, ShoppingBasket, User } from "lucide-react";
 import type { ReactNode } from "react";
-import { RullaaLogo } from "./RullaaLogo";
+import { TilliLogo } from "./TilliLogo";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -17,39 +17,51 @@ export function AppShell({ children, action }: { children: ReactNode; action?: R
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col bg-background">
-        <header className="sticky top-0 z-30 border-b border-border/50 bg-background/90 backdrop-blur-md">
-          <div className="flex items-center justify-between px-4 py-3">
-            <Link to="/" className="flex items-center gap-2">
-              <RullaaLogo className="h-8 w-8 text-primary" />
-              <span className="font-display text-2xl font-semibold tracking-tight text-foreground">Tilli</span>
-            </Link>
-            {action}
-          </div>
-        </header>
+      <header className="sticky top-0 z-30 bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Link to="/" className="flex items-center gap-2">
+            <TilliLogo className="h-8 w-8 text-primary" />
+            <span className="font-display text-[28px] font-semibold leading-none tracking-tight text-primary">
+              Tilli
+            </span>
+          </Link>
+          {action}
+        </div>
+      </header>
 
-        <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
+      <main className="flex-1 px-4 pb-28 pt-2">{children}</main>
 
-        <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-2xl border-t border-border/50 bg-background/90 backdrop-blur-md">
-          <ul className="grid grid-cols-5">
-            {TABS.map(({ to, label, icon: Icon }) => {
-              const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
-              return (
-                <li key={to}>
-                  <Link
-                    to={to}
+      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-2xl border-t border-border/60 bg-background/95 backdrop-blur-md">
+        <ul className="grid grid-cols-5">
+          {TABS.map(({ to, label, icon: Icon }) => {
+            const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+            return (
+              <li key={to}>
+                <Link
+                  to={to}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex flex-col items-center gap-1 pb-2 pt-2.5 text-[11px] transition-colors",
+                    active
+                      ? "font-semibold text-primary"
+                      : "font-medium text-muted-foreground hover:text-foreground/80",
+                  )}
+                >
+                  <span
                     className={cn(
-                      "flex flex-col items-center gap-1.5 py-3 text-[11px] font-medium transition-colors",
-                      active ? "text-primary" : "text-muted-foreground hover:text-foreground/80",
+                      "flex h-7 w-14 items-center justify-center rounded-full transition-colors",
+                      active && "bg-primary/10",
                     )}
                   >
-                    <Icon className={cn("h-5 w-5", active && "stroke-[2.5]")} />
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+                    <Icon className={cn("h-5 w-5", active && "stroke-[2.25]")} />
+                  </span>
+                  {label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }

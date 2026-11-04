@@ -1,4 +1,4 @@
-export function RullaaLogo({ className }: { className?: string }) {
+export function TilliLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" fill="none" className={className} aria-hidden="true">
       <circle cx="16" cy="16" r="14" className="fill-primary/12" />
