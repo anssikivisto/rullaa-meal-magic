@@ -506,48 +506,51 @@ raaka-aineet ja vaiheet. Pidä resepti realistisena ja suomalaisesta kaupasta sa
     return parsed;
   });
 
-/* -------- web recipe search -------- */
+/* -------- web recipe search (Tavily) -------- */
 
 export type WebResult = { title: string; url: string; snippet: string };
-
-function decodeEntities(s: string) {
-  return s
-    .replace(/<[^>]+>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#x27;|&#39;/g, "'")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .trim();
-}
 
 export const searchWebRecipes = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) => z.object({ query: z.string().min(2).max(200) }).parse(input))
   .handler(async ({ data }): Promise<WebResult[]> => {
-    const res = await fetch("https://html.duckduckgo.com/html/", {
+    const key = process.env["TAVILY_API_KEY"];
+    if (!key) throw new Error("Verkkohaku ei ole käytettävissä. (API-avain puuttuu)");
+
+    const res = await fetch("https://api.tavily.com/search", {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Mozilla/5.0 (compatible; OivaBot/1.0)",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
       },
-      body: new URLSearchParams({ q: `${data.query} resepti` }).toString(),
+      body: JSON.stringify({
+        query: `${data.query} resepti`,
+        search_depth: "basic",
+        max_results: 10,
+      }),
     });
-    if (!res.ok) throw new Error("Haku ei juuri nyt onnistu. Yritä hetken kuluttua.");
-    const html = await res.text();
+
+    if (!res.ok) {
+      if (res.status === 401) throw new Error("Haun API-avain on virheellinen.");
+      if (res.status === 429) throw new Error("Liikaa hakuja juuri nyt. Yritä hetken kuluttua.");
+      if (res.status === 432 || res.status === 433)
+        throw new Error("Kuukauden hakukiintiö on täynnä.");
+      throw new Error(`Haku epäonnistui (${res.status}).`);
+    }
+
+    const json = (await res.json()) as {
+      results?: { title?: string; url?: string; content?: string }[];
+    };
+
+    const seen = new Set<string>();
     const results: WebResult[] = [];
-    const re =
-      /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>)?/gi;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(html)) && results.length < 12) {
-      let url = m[1] ?? "";
-      const uddg = url.match(/uddg=([^&]+)/);
-      if (uddg) url = decodeURIComponent(uddg[1]!);
-      if (!/^https?:\/\//.test(url)) continue;
+    for (const r of json.results ?? []) {
+      const url = r.url ?? "";
+      if (!/^https?:\/\//.test(url) || seen.has(url)) continue;
+      seen.add(url);
       results.push({
-        title: decodeEntities(m[2] ?? ""),
+        title: (r.title ?? url).trim(),
         url,
-        snippet: decodeEntities(m[3] ?? "").slice(0, 200),
+        snippet: (r.content ?? "").replace(/\s+/g, " ").trim().slice(0, 200),
       });
     }
     return results;
