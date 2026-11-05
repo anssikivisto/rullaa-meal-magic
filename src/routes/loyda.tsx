@@ -1,12 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ExternalLink, Heart, Loader2, Search, Sparkles } from "lucide-react";
+import { ExternalLink, Heart, Loader2, Search, Sparkles, UtensilsCrossed } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAssistantContext } from "@/components/Assistant";
 import { TasteProfileDialog } from "@/components/TasteProfileDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   generateRecipe,
@@ -20,6 +19,7 @@ import { useRecipes, useSaveRecipe, useTasteProfile } from "@/lib/store";
 import { profileToText } from "@/lib/profile";
 import { formatQuantity } from "@/lib/categorize";
 import type { Ingredient } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/loyda")({
@@ -46,7 +46,40 @@ type Generated = {
   image_url?: string | null;
 };
 
+const TABS = [
+  { key: "sinulle", label: "Sinulle" },
+  { key: "web", label: "Hae verkosta" },
+  { key: "ai", label: "AI-apuri" },
+] as const;
+
+function RecipeBody({ recipe }: { recipe: Generated }) {
+  return (
+    <div className="space-y-3 text-sm">
+      <ul className="space-y-1.5">
+        {recipe.ingredients.map((i, idx) => (
+          <li key={idx} className="flex justify-between gap-3">
+            <span>{i.name}</span>
+            <span className="shrink-0 font-medium text-muted-foreground">
+              {formatQuantity(i.quantity)} {i.unit ?? ""}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <ol className="space-y-2.5 border-t border-border/60 pt-3">
+        {recipe.instructions.map((s, idx) => (
+          <li key={idx} className="flex gap-3">
+            <span className="font-semibold text-primary">{idx + 1}.</span>
+            <span className="leading-relaxed">{s}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 function Loyda() {
+  const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("sinulle");
+
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<WebResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -91,13 +124,13 @@ function Loyda() {
   }
 
   async function showIdeaRecipe(idea: RecipeIdea) {
-    // KORJAUS: Mahdollistetaan reseptin sulkeminen, jos se on jo auki
+    // Jos resepti on jo auki, suljetaan se
     if (openIdea === idea.title) {
       setOpenIdea(null);
       setIdeaRecipe(null);
       return;
     }
-    
+
     setIdeaBusy(idea.title);
     try {
       const r = await generateRecipe({
@@ -238,49 +271,70 @@ function Loyda() {
 
   return (
     <AppShell>
-      <h1 className="font-display text-3xl text-stone-800">Löydä uutta</h1>
+      <h1 className="mb-4 text-3xl">Löydä uutta</h1>
 
-      <Tabs defaultValue="sinulle" className="mt-4">
-        <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-stone-100 p-1">
-          <TabsTrigger value="sinulle" className="rounded-xl">Sinulle</TabsTrigger>
-          <TabsTrigger value="web" className="rounded-xl">Hae verkosta</TabsTrigger>
-          <TabsTrigger value="ai" className="rounded-xl">AI-apuri</TabsTrigger>
-        </TabsList>
+      {/* Välilehdet */}
+      <div className="mb-5 flex rounded-full bg-secondary p-1">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={cn(
+              "flex-1 rounded-full py-2 text-sm font-medium transition-colors",
+              tab === t.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value="sinulle" className="mt-4 space-y-4">
-          {/* Uusi lämmin infokortti */}
-          <div className="bg-stone-50 rounded-2xl border border-stone-200/60 shadow-sm px-5 py-5 space-y-4">
-            <p className="text-stone-700">
-              <span className="font-semibold block mb-1">Moi! Mitä tänään syödään? 🌿</span>
-              <span className="text-sm">
-                {profile?.summary
-                  ? profile.summary
-                  : "Kerro makuprofiilissa millaista ruokaa syöt, niin Tilli keksii sinulle osuvimmat ehdotukset."}
-              </span>
-            </p>
-            <Button variant="outline" className="w-full rounded-2xl border-stone-300 text-stone-700 hover:bg-stone-100" onClick={() => setProfileOpen(true)}>
-              <Heart className="mr-2 h-4 w-4 text-emerald-600" />
-              {profile ? "Päivitä makuprofiilia" : "Täytä makuprofiili"}
-            </Button>
-            <Button className="w-full rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white" onClick={() => void runIdeas()} disabled={ideasBusy}>
+      {tab === "sinulle" && (
+        <div className="space-y-4">
+          <section className="rounded-3xl bg-secondary/70 p-4">
+            <div className="flex items-start gap-3">
+              <Sparkles className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
+              <div>
+                <h2 className="font-display text-lg leading-tight">Mitä tänään syödään?</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {profile?.summary
+                    ? profile.summary
+                    : "Kerro makuprofiilissa millaista ruokaa syöt, niin Tilli keksii sinulle osuvimmat ehdotukset."}
+                </p>
+              </div>
+            </div>
+            <Button
+              className="mt-3 h-11 w-full rounded-[14px]"
+              onClick={() => void runIdeas()}
+              disabled={ideasBusy}
+            >
               {ideasBusy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Sparkles className="mr-2 h-4 w-4" />
               )}
-              Tilli, ehdota minulle reseptejä
+              Ehdota minulle reseptejä
             </Button>
-          </div>
+            <Button
+              variant="outline"
+              className="mt-2 h-11 w-full rounded-[14px] bg-card"
+              onClick={() => setProfileOpen(true)}
+            >
+              <Heart className="mr-2 h-4 w-4 text-primary" />
+              {profile ? "Päivitä makuprofiilia" : "Täytä makuprofiili"}
+            </Button>
+          </section>
 
           {ideas.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
               {["lisää kasvisruokia", "nopeampia", "uusi haku"].map((r) => (
                 <button
                   key={r}
                   type="button"
                   disabled={ideasBusy}
                   onClick={() => void runIdeas(r === "uusi haku" ? undefined : r)}
-                  className="rounded-2xl border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-50 transition-colors"
+                  className="shrink-0 rounded-full bg-secondary px-4 py-1.5 text-sm font-medium text-secondary-foreground disabled:opacity-50"
                 >
                   {r}
                 </button>
@@ -288,37 +342,30 @@ function Loyda() {
             </div>
           )}
 
-          <ul className="space-y-4">
+          <ul className="space-y-3">
             {ideas.map((idea) => (
-              <li key={idea.title} className="bg-white rounded-2xl border border-stone-100 shadow-sm px-5 py-4">
-                <p className="font-display text-lg text-stone-800 leading-snug">{idea.title}</p>
-                <p className="mt-1 text-sm text-stone-500">{idea.description}</p>
-                <p className="mt-1 text-xs text-stone-400">
-                  {idea.prep_time ? `${idea.prep_time} min · ` : ""}
-                  {idea.servings ?? 4} annosta
+              <li key={idea.title} className="card-soft p-4">
+                <div className="flex gap-3">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                    <UtensilsCrossed className="h-5 w-5 text-muted-foreground/60" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-display text-lg leading-snug">{idea.title}</h3>
+                    <p className="mt-0.5 text-sm text-muted-foreground">{idea.description}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {idea.prep_time ? `${idea.prep_time} min · ` : ""}
+                      {idea.servings ?? 4} annosta
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-3 inline-block rounded-lg bg-tag-diet px-2.5 py-1 text-xs font-medium text-tag-diet-foreground">
+                  {idea.reason}
                 </p>
-                <p className="mt-2 text-xs font-medium text-emerald-700 bg-emerald-50 inline-block px-2 py-1 rounded-lg">{idea.reason}</p>
 
                 {openIdea === idea.title && ideaRecipe && (
-                  <div className="mt-4 space-y-3 border-t border-stone-100 pt-4">
-                    <ul className="space-y-1.5 text-sm text-stone-700">
-                      {ideaRecipe.ingredients.map((i, idx) => (
-                        <li key={idx} className="flex justify-between gap-3">
-                          <span>{i.name}</span>
-                          <span className="shrink-0 font-medium text-stone-500">
-                            {formatQuantity(i.quantity)} {i.unit ?? ""}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    <ol className="space-y-2.5 text-sm text-stone-700 pt-2 border-t border-stone-50">
-                      {ideaRecipe.instructions.map((s, idx) => (
-                        <li key={idx} className="flex gap-3">
-                          <span className="text-emerald-700 font-semibold">{idx + 1}.</span>
-                          <span className="leading-relaxed">{s}</span>
-                        </li>
-                      ))}
-                    </ol>
+                  <div className="mt-4 border-t border-border/60 pt-4">
+                    <RecipeBody recipe={ideaRecipe} />
                   </div>
                 )}
 
@@ -326,18 +373,16 @@ function Loyda() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-xl border-stone-200 text-stone-700"
+                    className="rounded-xl"
                     onClick={() => void showIdeaRecipe(idea)}
                     disabled={ideaBusy === idea.title}
                   >
-                    {ideaBusy === idea.title && (
-                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                    )}
+                    {ideaBusy === idea.title && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
                     {openIdea === idea.title ? "Piilota resepti" : "Näytä resepti"}
                   </Button>
                   <Button
                     size="sm"
-                    className="rounded-xl bg-stone-800 hover:bg-stone-900 text-white"
+                    className="rounded-xl"
                     onClick={() => void saveIdeaRecipe(idea)}
                     disabled={ideaBusy === idea.title}
                   >
@@ -349,65 +394,65 @@ function Loyda() {
           </ul>
 
           {ideas.length === 0 && !ideasBusy && (
-            <div className="py-8 text-center space-y-2">
-              <p className="text-stone-500 text-sm">
-                Tilli pitää huolen, ettei ehdotuksissa toisteta jo tallentamiasi reseptejä. Etsi rohkeasti uusia makuja!
-              </p>
-            </div>
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+              Tilli ei toista ehdotuksissa jo tallentamiasi reseptejä, joten voit etsiä rohkeasti
+              uusia makuja.
+            </p>
           )}
 
           <TasteProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
-        </TabsContent>
+        </div>
+      )}
 
-
-        <TabsContent value="web" className="mt-4 space-y-4">
+      {tab === "web" && (
+        <div className="space-y-4">
           <div className="flex gap-2">
-            <Input
-              className="rounded-2xl border-stone-200 bg-white"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Esim. uunifetapasta"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void runSearch();
-                }
-              }}
-            />
-            <Button className="rounded-2xl bg-stone-800 hover:bg-stone-900" onClick={() => void runSearch()} disabled={searching} aria-label="Hae">
-              {searching ? (
-                <Loader2 className="h-4 w-4 animate-spin text-white" />
-              ) : (
-                <Search className="h-4 w-4 text-white" />
-              )}
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Esim. uunifetapasta"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void runSearch();
+                  }
+                }}
+              />
+            </div>
+            <Button
+              className="rounded-xl"
+              onClick={() => void runSearch()}
+              disabled={searching}
+              aria-label="Hae"
+            >
+              {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Hae"}
             </Button>
           </div>
 
           {results.length === 0 && !searching && (
-            <div className="py-10 text-center space-y-2 bg-stone-50 rounded-2xl border border-stone-100 mt-6">
-              <p className="text-stone-700 font-medium">Tillin vinkki 💡</p>
-              <p className="text-sm text-stone-500 px-6">
-                Löysitkö kivan reseptin netistä? Hae sitä täältä ja tallenna se suoraan Tilliin, niin se on mukana ensi viikon ruokalistalla!
-              </p>
-            </div>
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+              Löysitkö kivan reseptin netistä? Hae sitä täältä ja tallenna se suoraan Tilliin, niin
+              se on mukana ruokalistallasi.
+            </p>
           )}
 
           <ul className="space-y-3">
             {results.map((r) => (
-              <li key={r.url} className="bg-white rounded-2xl border border-stone-100 shadow-sm px-5 py-4">
-                <p className="font-display text-lg text-stone-800 leading-snug">{r.title}</p>
-                {r.snippet && (
-                  <p className="mt-1 text-sm text-stone-500">{r.snippet}</p>
-                )}
+              <li key={r.url} className="card-soft p-4">
+                <h3 className="font-display text-lg leading-snug">{r.title}</h3>
+                {r.snippet && <p className="mt-1 text-sm text-muted-foreground">{r.snippet}</p>}
                 <div className="mt-4 flex gap-2">
-                  <Button asChild variant="outline" size="sm" className="rounded-xl border-stone-200">
-                    <a href={r.url} target="_blank" rel="noreferrer" className="text-stone-700">
+                  <Button asChild variant="outline" size="sm" className="rounded-xl">
+                    <a href={r.url} target="_blank" rel="noreferrer">
                       <ExternalLink className="mr-1 h-4 w-4" /> Avaa sivu
                     </a>
                   </Button>
                   <Button
                     size="sm"
-                    className="rounded-xl bg-stone-800 hover:bg-stone-900 text-white"
+                    className="rounded-xl"
                     onClick={() => void saveFromUrl(r.url)}
                     disabled={savingUrl === r.url}
                   >
@@ -418,18 +463,34 @@ function Loyda() {
               </li>
             ))}
           </ul>
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="ai" className="mt-4 space-y-4">
-          <div className="bg-stone-50 rounded-2xl border border-stone-200/60 p-4 space-y-3">
+      {tab === "ai" && (
+        <div className="space-y-4">
+          <section className="rounded-3xl bg-secondary/70 p-4">
+            <div className="flex items-start gap-3">
+              <Sparkles className="mt-0.5 h-6 w-6 shrink-0 text-primary" />
+              <div>
+                <h2 className="font-display text-lg leading-tight">Luo resepti tekoälyllä</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Kerro, mitä haluat kokata (raaka-aineet, ruokavalio, aika), niin Tilli luo
+                  reseptin.
+                </p>
+              </div>
+            </div>
             <Textarea
-              className="rounded-xl border-stone-200 bg-white placeholder:text-stone-400 text-stone-700"
+              className="mt-3 bg-card"
               rows={3}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Esim. keitä jotain helppoa linsseistä ja kaurakermasta"
             />
-            <Button className="w-full rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white" onClick={() => void runGenerate()} disabled={generating}>
+            <Button
+              className="mt-3 h-11 w-full rounded-[14px]"
+              onClick={() => void runGenerate()}
+              disabled={generating}
+            >
               {generating ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -437,42 +498,29 @@ function Loyda() {
               )}
               Luo resepti
             </Button>
-          </div>
+          </section>
 
           {generated && (
-            <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-5 py-5 space-y-4">
-              <div className="border-b border-stone-100 pb-3">
-                <p className="font-display text-2xl text-stone-800">{generated.title}</p>
-                <p className="text-sm text-stone-500 mt-1">
+            <div className="card-soft space-y-4 p-5">
+              <div className="border-b border-border/60 pb-3">
+                <h3 className="font-display text-2xl">{generated.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {generated.servings ?? 4} annosta
                   {generated.prep_time ? ` · ${generated.prep_time} min` : ""}
                 </p>
               </div>
-              <ul className="space-y-1.5 text-sm text-stone-700">
-                {generated.ingredients.map((i, idx) => (
-                  <li key={idx} className="flex justify-between gap-3">
-                    <span>{i.name}</span>
-                    <span className="shrink-0 font-medium text-stone-500">
-                      {formatQuantity(i.quantity)} {i.unit ?? ""}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <ol className="space-y-2.5 text-sm text-stone-700 pt-2 border-t border-stone-50">
-                {generated.instructions.map((s, idx) => (
-                  <li key={idx} className="flex gap-3">
-                    <span className="text-emerald-700 font-semibold">{idx + 1}.</span>
-                    <span className="leading-relaxed">{s}</span>
-                  </li>
-                ))}
-              </ol>
-              <Button className="w-full rounded-xl bg-stone-800 hover:bg-stone-900 text-white mt-4" onClick={() => void saveGenerated()} disabled={save.isPending}>
+              <RecipeBody recipe={generated} />
+              <Button
+                className="mt-2 h-11 w-full rounded-[14px]"
+                onClick={() => void saveGenerated()}
+                disabled={save.isPending}
+              >
                 Tallenna Tilliin
               </Button>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </AppShell>
   );
 }
