@@ -16,6 +16,13 @@ import { useAssistantContext } from "@/components/Assistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   usePlan,
   usePlanActions,
   useRecipes,
@@ -58,6 +65,7 @@ function Ruokalista() {
   const { data: taste } = useTasteProfile();
   const [wish, setWish] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const todayStr = new Date().toLocaleDateString("sv-SE");
 
   useEffect(() => {
@@ -85,11 +93,32 @@ function Ruokalista() {
     })),
   });
 
-  async function generate() {
+  // Paikka, johon tekoäly sijoittaa päivän ruoan (päivällinen tai päivän viimeinen ateria)
+  const targetSlot = (date: string): MealEntry | null => {
+    const slots = slotsFor(date);
+    return slots.find((s) => s.meal_type === "Päivällinen") ?? slots[slots.length - 1] ?? null;
+  };
+
+  // Kuinka monessa päivässä generointi korvaisi jo valitun reseptin tai tilanteen
+  const occupiedCount = dates.filter((d) => {
+    const t = targetSlot(d);
+    return !!t && (!!t.recipe_id || !!t.status);
+  }).length;
+
+  function requestGenerate() {
     if (!recipes.length) {
       toast.error("Tallenna ensin muutama resepti.");
       return;
     }
+    if (occupiedCount > 0) {
+      setConfirmOpen(true);
+      return;
+    }
+    void generate("all");
+  }
+
+  async function generate(mode: "all" | "empty") {
+    setConfirmOpen(false);
     setGenerating(true);
     try {
       const result = await generateWeekPlan({
@@ -99,12 +128,12 @@ function Ruokalista() {
           profile: profileToText(taste),
         },
       });
+      let filled = 0;
       for (const item of result) {
         const date = dates[item.day];
         if (!date) continue;
-        const slots = slotsFor(date);
-        const target =
-          slots.find((s) => s.meal_type === "Päivällinen") ?? slots[slots.length - 1] ?? null;
+        const target = targetSlot(date);
+        if (mode === "empty" && target && (target.recipe_id || target.status)) continue;
         if (target) {
           await setSlot.mutateAsync({
             id: target.id,
@@ -121,8 +150,13 @@ function Ruokalista() {
             position: 0,
           });
         }
+        filled++;
       }
-      toast.success("Viikon ruokalista luotu.");
+      toast.success(
+        mode === "empty"
+          ? `Täytettiin ${filled} tyhjää päivää.`
+          : "Viikon ruokalista luotu.",
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Ruokalistan luonti epäonnistui.");
     } finally {
@@ -210,7 +244,7 @@ function Ruokalista() {
         />
         <Button
           className="mt-3 h-11 w-full rounded-[14px]"
-          onClick={generate}
+          onClick={requestGenerate}
           disabled={generating}
         >
           {generating ? (
@@ -303,9 +337,34 @@ function Ruokalista() {
       <Button variant="outline" className="mt-4 h-11 w-full rounded-[14px]" onClick={addWeekToList}>
         <ShoppingBasket className="mr-2 h-4 w-4" /> Lisää viikon reseptit ostoslistalle
       </Button>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Korvataanko valitut ateriat?</DialogTitle>
+            <DialogDescription>
+              Viikolla on jo {occupiedCount} valittua ateriaa tai tilannetta, jotka generointi
+              korvaisi. Haluatko täyttää vain tyhjät päivät?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button className="h-11 rounded-[14px]" onClick={() => void generate("empty")}>
+              Täytä vain tyhjät
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 rounded-[14px]"
+              onClick={() => void generate("all")}
+            >
+              Korvaa myös valitut
+            </Button>
+            <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+              Peruuta
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppShell>
-  );
-}
 
 function SlotRow({
   slot,
