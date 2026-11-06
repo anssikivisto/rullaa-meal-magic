@@ -108,10 +108,10 @@ export function TasteProfileDialog({
                     type="button"
                     onClick={() => toggle(t)}
                     className={cn(
-                      "rounded-full border px-3 py-1.5 text-xs transition-all active:scale-95",
+                      "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors active:scale-95",
                       active
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-muted/40 text-muted-foreground",
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-secondary-foreground",
                     )}
                   >
                     {t}
