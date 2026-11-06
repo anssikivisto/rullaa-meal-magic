@@ -219,3 +219,53 @@ function Ostoslista() {
           className="h-12 w-full rounded-[14px] text-base shadow-lg"
           onClick={() => setAddOpen(true)}
         >
+          <Plus className="mr-2 h-5 w-5" /> Lisää tuote
+        </Button>
+      </div>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lisää tuote</DialogTitle>
+            <DialogDescription>
+              Tuote sijoitetaan automaattisesti oikeaan osastoon. Voit lisätä useita peräkkäin.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              autoFocus
+              placeholder="Tuote, esim. maito"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  add();
+                }
+              }}
+            />
+            <div className="flex gap-2">
+              <Input
+                inputMode="decimal"
+                placeholder="Määrä"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+              <Input
+                placeholder="Yksikkö (dl, kpl)"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+              />
+            </div>
+            <Button className="h-11 w-full rounded-[14px]" onClick={add}>
+              <Plus className="mr-2 h-4 w-4" /> Lisää
+            </Button>
+            <Button variant="ghost" className="w-full" onClick={() => setAddOpen(false)}>
+              Valmis
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </AppShell>
+  );
+}
