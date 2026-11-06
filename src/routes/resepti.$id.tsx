@@ -1,15 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChefHat, Clock, ExternalLink, Minus, Pencil, Plus, ShoppingBasket, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, ChefHat, ChevronRight, Clock, ExternalLink, Minus, Pencil, Plus, ShoppingBasket, Sparkles, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { TagChip } from "@/components/TagChip";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RecipeEditor, recipeToDraft, type DraftRecipe } from "@/components/RecipeEditor";
 import { useDeleteRecipe, useRecipes, useSaveRecipe, useShoppingActions } from "@/lib/store";
-import { useAssistant, useAssistantContext } from "@/components/Assistant";
+import { useAssistant, useAssistantContext, type EditableRecipe } from "@/components/Assistant";
 import { formatQuantity, scaleIngredient } from "@/lib/categorize";
 import { toast } from "sonner";
+import type { Recipe } from "@/lib/types";
 
 export const Route = createFileRoute("/resepti/$id")({
   head: () => ({
@@ -61,9 +62,17 @@ function ReseptiSivu() {
   const del = useDeleteRecipe();
   const { addRecipes } = useShoppingActions();
   const assistant = useAssistant();
+    const [preview, setPreview] = useState<EditableRecipe | null>(null);
+
+  // Tyhjennä esikatselu, kun resepti vaihtuu tai se tallennetaan
+  useEffect(() => {
+    setPreview(null);
+  }, [recipe]);
 
   useWakeLock(cookMode);
-  useAssistantContext(recipe ? { label: "Resepti", data: recipe, recipe } : null);
+  useAssistantContext(
+    recipe ? { label: "Resepti", data: recipe, recipe, onApply: (u) => setPreview(u) } : null,
+  );
 
   if (isLoading) {
     return (
@@ -86,9 +95,21 @@ function ReseptiSivu() {
     );
   }
 
-  const current = servings ?? recipe.servings;
-  const factor = current / (recipe.servings || 1);
-  const scaled = recipe.ingredients.map((i) => scaleIngredient(i, factor));
+  // Näytettävä versio: alkuperäinen tai tekoälyn muutosehdotus (ei tallennettu)
+  const view: Recipe = preview
+    ? {
+        ...recipe,
+        title: preview.title || recipe.title,
+        servings: preview.servings ?? recipe.servings,
+        prep_time: preview.prep_time ?? recipe.prep_time,
+        ingredients: preview.ingredients,
+        instructions: preview.instructions,
+      }
+    : recipe;
+
+  const current = servings ?? view.servings;
+  const factor = current / (view.servings || 1);
+  const scaled = view.ingredients.map((i) => scaleIngredient(i, factor));
 
   if (cookMode) {
     return (
@@ -105,11 +126,11 @@ function ReseptiSivu() {
           {recipe.image_url ? (
             <img
               src={recipe.image_url}
-              alt={recipe.title}
+              alt={view.title}
               className="mb-4 h-48 w-full rounded-2xl object-cover"
             />
           ) : null}
-          <h1 className="font-display text-4xl leading-tight">{recipe.title}</h1>
+          <h1 className="font-display text-4xl leading-tight">{view.title}</h1>
           <p className="mt-2 text-lg text-muted-foreground">{current} annosta</p>
 
           <h2 className="mt-8 font-display text-2xl">Ainekset</h2>
@@ -123,7 +144,7 @@ function ReseptiSivu() {
 
           <h2 className="mt-8 font-display text-2xl">Vaiheet</h2>
           <ol className="mt-3 space-y-5 text-2xl leading-relaxed">
-            {recipe.instructions.map((s, idx) => (
+            {view.instructions.map((s, idx) => (
               <li key={idx} className="flex gap-3">
                 <span className="font-display text-primary">{idx + 1}.</span>
                 <span>{s}</span>
@@ -159,15 +180,15 @@ function ReseptiSivu() {
       {recipe.image_url ? (
         <img
           src={recipe.image_url}
-          alt={recipe.title}
+          alt={view.title}
           className="mb-4 h-52 w-full rounded-2xl object-cover"
         />
       ) : null}
-      <h1 className="font-display text-3xl leading-tight">{recipe.title}</h1>
+      <h1 className="font-display text-3xl leading-tight">{view.title}</h1>
       <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-        {recipe.prep_time ? (
+        {view.prep_time ? (
           <span className="flex items-center gap-1">
-            <Clock className="h-4 w-4" /> {recipe.prep_time} min
+            <Clock className="h-4 w-4" /> {view.prep_time} min
           </span>
         ) : null}
         {recipe.source_url ? (
@@ -187,6 +208,19 @@ function ReseptiSivu() {
           {recipe.tags.map((t) => (
             <TagChip key={t} tag={t} />
           ))}
+        </div>
+      )}
+
+      {preview && (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-secondary/70 px-4 py-3 text-sm">
+          <span>Näytät tekoälyn muutosehdotusta. Sitä ei ole tallennettu.</span>
+          <button
+            type="button"
+            className="shrink-0 font-medium text-primary"
+            onClick={() => setPreview(null)}
+          >
+            Palaa alkuperäiseen
+          </button>
         </div>
       )}
 
@@ -226,13 +260,24 @@ function ReseptiSivu() {
         ))}
       </div>
 
-      <Button
-        variant="outline"
-        className="mt-3 w-full"
-        onClick={() => assistant.open({ label: "Resepti", data: recipe, recipe })}
+      <button
+        type="button"
+        onClick={() =>
+          assistant.open({ label: "Resepti", data: recipe, recipe, onApply: (u) => setPreview(u) })
+        }
+        className="card-soft mt-4 flex w-full items-center gap-3 p-4 text-left transition-transform active:scale-[0.99]"
       >
-        <Sparkles className="mr-2 h-4 w-4" /> Avaa AI-Apurissa
-      </Button>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-secondary">
+          <Sparkles className="h-5 w-5 text-primary" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">Muokkaa tekoälyllä</span>
+          <span className="block text-sm text-muted-foreground">
+            Esim. vegaaniseksi, korvaa aines tai skaalaa annokset
+          </span>
+        </span>
+        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+      </button>
 
       <h2 className="mt-6 font-display text-xl">Ainekset</h2>
       <ul className="card-soft mt-2 divide-y divide-border px-4">
@@ -249,7 +294,7 @@ function ReseptiSivu() {
       <Button
         className="mt-3 w-full"
         onClick={async () => {
-          await addRecipes.mutateAsync([{ recipe, factor }]);
+          await addRecipes.mutateAsync([{ recipe: view, factor }]);
           toast.success("Ainekset lisätty ostoslistalle.");
         }}
       >
@@ -258,7 +303,7 @@ function ReseptiSivu() {
 
       <h2 className="mt-6 font-display text-xl">Valmistus</h2>
       <ol className="mt-2 space-y-3">
-        {recipe.instructions.map((s, idx) => (
+        {view.instructions.map((s, idx) => (
           <li key={idx} className="card-soft flex gap-3 px-4 py-3 text-sm leading-relaxed">
             <span className="font-display text-primary">{idx + 1}.</span>
             <span>{s}</span>
