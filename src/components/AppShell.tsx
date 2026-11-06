@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { BookOpen, CalendarDays, Compass, ShoppingBasket, User } from "lucide-react";
 import type { ReactNode } from "react";
+import { AssistantButton } from "./Assistant";
 import { TilliLogo } from "./TilliLogo";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +26,10 @@ export function AppShell({ children, action }: { children: ReactNode; action?: R
               Tilli
             </span>
           </Link>
-          {action}
+          <div className="flex items-center gap-1">
+            {action}
+            <AssistantButton />
+          </div>
         </div>
       </header>
 

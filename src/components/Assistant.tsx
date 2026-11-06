@@ -17,6 +17,7 @@ import { profileToText } from "@/lib/profile";
 import type { Ingredient, Recipe } from "@/lib/types";
 import { formatQuantity } from "@/lib/categorize";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export type EditableRecipe = {
   title: string;
@@ -63,6 +64,24 @@ export function useAssistantContext(ctx: AssistantCtx | null) {
   });
 }
 
+/** Compact assistant button for the app header or inside pages. */
+export function AssistantButton({ className }: { className?: string }) {
+  const { open } = useAssistant();
+  return (
+    <button
+      type="button"
+      aria-label="Avaa AI-apuri"
+      onClick={() => open()}
+      className={cn(
+        "flex h-10 w-10 items-center justify-center rounded-full text-primary transition-all hover:bg-secondary active:scale-90",
+        className,
+      )}
+    >
+      <Sparkles className="h-5 w-5" />
+    </button>
+  );
+}
+
 type Msg = { role: "user" | "assistant"; content: string };
 
 export function AssistantProvider({ children }: { children: ReactNode }) {
@@ -82,14 +101,6 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
   return (
     <AssistantContext.Provider value={{ setContext, open: openSheet }}>
       {children}
-      <button
-        type="button"
-        aria-label="Avaa AI-apuri"
-        onClick={() => openSheet()}
-        className="fixed bottom-24 right-4 z-40 flex h-13 w-13 items-center justify-center rounded-full bg-primary p-3.5 text-primary-foreground shadow-lg transition-transform active:scale-95"
-      >
-        <Sparkles className="h-5 w-5" />
-      </button>
       <AssistantSheet open={open} onOpenChange={setOpen} ctx={active} />
     </AssistantContext.Provider>
   );
