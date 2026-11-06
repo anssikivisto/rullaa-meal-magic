@@ -77,7 +77,8 @@ unit kuten g, kg, dl, ml, l, rkl, tl, kpl, pkt, prk tai null, ja name pelkkänä
 TÄRKEÄÄ: erottele jokainen raaka-aine kolmeen kenttään. Määrä kuuluu VAIN quantity-kenttään, mittayksikkö VAIN unit-kenttään
 ja name-kentässä ei saa olla määrää eikä yksikköä (esim. "14 oz firm tofu" -> quantity 14, unit "oz", name "kiinteä tofu"),
 instructions (selkeät vaiheet järjestyksessä, ilman numerointia).
-Kirjoita kaikki suomeksi. Älä keksi raaka-aineita joita tekstissä ei ole.`;
+Kirjoita kaikki suomeksi. Älä keksi raaka-aineita joita tekstissä ei ole.
+Älä koskaan muunna mittayksiköitä toisiksi: jos tekstissä lukee "2 dl", palauta quantity 2 ja unit "dl". Älä muunna tilavuutta painoksi.`;
 
 export const parseRecipeText = createServerFn({ method: "POST" }).middleware([authMiddleware])
   .validator((input: unknown) => z.object({ text: z.string().min(5).max(20000) }).parse(input))
@@ -420,10 +421,13 @@ export const translateRecipe = createServerFn({ method: "POST" }).middleware([au
       messages: [
         {
           role: "system",
-          content: `Käännä resepti suomeksi ja muunna kaikki mitat metrijärjestelmään.
-Muunnokset: 1 cup = 2,4 dl (kuivat aineet muunna grammoiksi kun järkevää), 1 oz = 28 g, 1 lb = 454 g,
-1 tbsp = 1 rkl, 1 tsp = 1 tl, fahrenheit -> celsius ((F-32)/1,8, pyöristä lähimpään 5 asteeseen).
-Käännä otsikko, raaka-aineet ja vaiheet luontevalle suomelle. Pyöristä määrät järkeviksi.
+          content: `Käännä resepti suomeksi ja muunna vain epämetriset mitat metrisiksi.
+SÄÄNNÖT:
+- Älä koskaan muuta jo metrisiä mittoja: g, kg, ml, cl, dl, l, rkl, tl ja kpl pysyvät täsmälleen ennallaan (esim. "2 dl vettä" pysyy "2 dl vettä").
+- Älä koskaan muunna tilavuutta painoksi tai painoa tilavuudeksi.
+- Muunna vain nämä: 1 cup = 2,4 dl, 1 oz = 28 g, 1 lb = 454 g, 1 tbsp = 1 rkl, 1 tsp = 1 tl, 1 pint = 4,7 dl, 1 quart = 9,5 dl, fahrenheit -> celsius ((F-32)/1,8, pyöristä lähimpään 5 asteeseen).
+- Jos yksikkö ei kuulu yllä oleviin, jätä se ennalleen.
+Käännä otsikko, raaka-aineet ja vaiheet luontevalle suomelle. Pyöristä määrät järkeviksi, mutta älä muuta yksikköä, ellei se ole yllä listattu.
 Palauta sama JSON-rakenne.`,
         },
         { role: "user", content: JSON.stringify(data.recipe) },
@@ -494,7 +498,8 @@ export const generateRecipe = createServerFn({ method: "POST" }).middleware([aut
           role: "system",
           content: `Luot uuden suomenkielisen reseptin käyttäjän toiveen perusteella.
 Käytä metrimittoja (g, dl, rkl, tl, kpl). Anna selkeä otsikko, annosmäärä, valmistusaika minuutteina,
-raaka-aineet ja vaiheet. Pidä resepti realistisena ja suomalaisesta kaupasta saatavilla aineksilla.`,
+raaka-aineet ja vaiheet. Pidä resepti realistisena ja suomalaisesta kaupasta saatavilla aineksilla. 
+Voit käyttää monipuolisesti mausteita, ja voit tarvittaessa käyttää myös valmiita maustekastikkeita.`,
         },
         { role: "user", content: data.prompt },
       ],
@@ -692,7 +697,7 @@ export const suggestRecipeIdeas = createServerFn({ method: "POST" }).middleware(
         {
           role: "system",
           content: `Ehdotat suomenkieliselle kotikokille 6–8 uutta reseptiä, jotka hän voisi haluta lisätä omaan reseptikirjastoonsa.
-Käytä käyttäjän makuprofiilia. Vaihtele ruokalajeja ja raaka-aineita, pidä ne arkiseen suomalaiseen kauppaan sopivina.
+Käytä käyttäjän makuprofiilia. Vaihtele ruokalajeja ja raaka-aineita.
 Älä ehdota reseptejä, jotka ovat jo listassa "jo tallennetut".
 Palauta JSON {"ideas":[{"title","description","prep_time","servings","reason","tags"}]}.
 description = 1 lause siitä mikä ruoka on. reason = 1 lause miksi tämä sopii juuri tälle käyttäjälle. tags = 1–3 lyhyttä suomenkielistä tagia.`,
