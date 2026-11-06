@@ -365,6 +365,8 @@ function Ruokalista() {
         </DialogContent>
       </Dialog>
     </AppShell>
+  );
+}
 
 function SlotRow({
   slot,
